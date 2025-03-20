@@ -14,7 +14,17 @@ const data = [
 const savingsGoal = 2000;
 const savingsProgress = (1700 / savingsGoal) * 100;
 
-const CustomTooltip = ({ active, payload }) => {
+// Fix the TypeScript error by adding proper type definitions
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+    payload?: any;
+  }>;
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-gray-800 p-2 shadow-lg rounded border border-gray-200 dark:border-gray-700">
@@ -27,9 +37,9 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export const MonthlySnapshot = () => {
-  const [activeIndex, setActiveIndex] = useState(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  const onPieEnter = (_, index) => {
+  const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index);
   };
 
