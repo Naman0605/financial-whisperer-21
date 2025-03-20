@@ -11,11 +11,42 @@ import {
   CreditCard, 
   FileText, 
   PiggyBank, 
-  MessageSquare 
+  MessageSquare,
+  X
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export const ExpensesStep = () => {
+  const [expenses, setExpenses] = useState([
+    { id: 1, name: "Rent/Mortgage", amount: "" },
+    { id: 2, name: "Utilities", amount: "" },
+    { id: 3, name: "Groceries", amount: "" },
+    { id: 4, name: "Transportation", amount: "" }
+  ]);
+
+  const addExpense = () => {
+    const newId = Math.max(...expenses.map(exp => exp.id)) + 1;
+    setExpenses([...expenses, { id: newId, name: "", amount: "" }]);
+  };
+
+  const removeExpense = (id) => {
+    if (expenses.length <= 1) {
+      toast({
+        title: "Cannot remove",
+        description: "You need at least one expense category.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setExpenses(expenses.filter(exp => exp.id !== id));
+  };
+
+  const updateExpense = (id, field, value) => {
+    setExpenses(expenses.map(exp => 
+      exp.id === id ? { ...exp, [field]: value } : exp
+    ));
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -29,29 +60,45 @@ export const ExpensesStep = () => {
       </div>
       
       <div className="grid gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="rent">Rent/Mortgage</Label>
-          <Input id="rent" type="number" placeholder="0.00" />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="utilities">Utilities</Label>
-          <Input id="utilities" type="number" placeholder="0.00" />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="groceries">Groceries</Label>
-          <Input id="groceries" type="number" placeholder="0.00" />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="transportation">Transportation</Label>
-          <Input id="transportation" type="number" placeholder="0.00" />
-        </div>
+        {expenses.map((expense) => (
+          <div key={expense.id} className="grid gap-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`expense-name-${expense.id}`}>{expense.name || "Expense Name"}</Label>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6" 
+                onClick={() => removeExpense(expense.id)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <Input 
+                id={`expense-name-${expense.id}`} 
+                placeholder="Expense name" 
+                value={expense.name}
+                onChange={(e) => updateExpense(expense.id, "name", e.target.value)}
+              />
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</div>
+                <Input 
+                  id={`expense-amount-${expense.id}`} 
+                  type="number" 
+                  placeholder="0.00" 
+                  className="pl-7"
+                  value={expense.amount}
+                  onChange={(e) => updateExpense(expense.id, "amount", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
         
         <Button 
           variant="outline" 
           className="text-finance-teal border-dashed border-finance-teal/50 hover:bg-finance-teal/10"
+          onClick={addExpense}
         >
           + Add another expense
         </Button>
@@ -73,24 +120,24 @@ export const BankLinkStep = () => {
         </p>
       </div>
       
-      <div className="space-y-4">
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all">
+      <div className="flex flex-col items-center justify-center space-y-4 max-w-md mx-auto">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all w-full">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-md bg-blue-100 flex items-center justify-center">
               <CreditCard className="h-5 w-5 text-blue-600" />
             </div>
             <div>
               <p className="font-medium">Connect to your bank</p>
-              <p className="text-sm text-muted-foreground">Link securely via Plaid</p>
+              <p className="text-sm text-muted-foreground">This feature is coming soon</p>
             </div>
           </div>
         </div>
         
-        <Separator>
+        <Separator className="w-full">
           <span className="px-2 text-xs text-muted-foreground">OR</span>
         </Separator>
         
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all w-full">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-md bg-green-100 flex items-center justify-center">
               <FileText className="h-5 w-5 text-green-600" />
@@ -102,7 +149,7 @@ export const BankLinkStep = () => {
           </div>
         </div>
         
-        <Separator>
+        <Separator className="w-full">
           <span className="px-2 text-xs text-muted-foreground">OR</span>
         </Separator>
         
@@ -122,6 +169,41 @@ export const BankLinkStep = () => {
 };
 
 export const SavingsGoalsStep = () => {
+  const [goals, setGoals] = useState([
+    { id: 1, name: "Emergency Fund", target: "", monthly: "" },
+    { id: 2, name: "Vacation", target: "", monthly: "" }
+  ]);
+
+  const addGoal = () => {
+    const newId = Math.max(...goals.map(goal => goal.id)) + 1;
+    setGoals([...goals, { id: newId, name: "", target: "", monthly: "" }]);
+  };
+
+  const removeGoal = (id) => {
+    if (goals.length <= 1) {
+      toast({
+        title: "Cannot remove",
+        description: "You need at least one savings goal.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setGoals(goals.filter(goal => goal.id !== id));
+  };
+
+  const updateGoal = (id, field, value) => {
+    setGoals(goals.map(goal => 
+      goal.id === id ? { ...goal, [field]: value } : goal
+    ));
+  };
+
+  // Calculate estimated months to reach goal
+  const calculateMonths = (target, monthly) => {
+    if (!target || !monthly || monthly <= 0) return "N/A";
+    const months = Math.ceil(parseFloat(target) / parseFloat(monthly));
+    return `${months} months`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -135,31 +217,63 @@ export const SavingsGoalsStep = () => {
       </div>
       
       <div className="space-y-4">
-        <div className="grid gap-2">
-          <Label htmlFor="emergency-fund">Emergency Fund</Label>
-          <Input id="emergency-fund" type="number" placeholder="Target amount" />
-          <div className="grid grid-cols-2 gap-2 mt-1">
-            <Input type="number" placeholder="Monthly contribution" />
-            <div className="bg-gray-100 dark:bg-gray-800 rounded px-3 py-2 text-sm flex items-center">
-              <span className="text-muted-foreground">Estimated: 8 months</span>
+        {goals.map((goal) => (
+          <div key={goal.id} className="grid gap-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`goal-name-${goal.id}`}>{goal.name || "Goal Name"}</Label>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6" 
+                onClick={() => removeGoal(goal.id)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input 
+                id={`goal-name-${goal.id}`} 
+                placeholder="Goal name" 
+                value={goal.name}
+                onChange={(e) => updateGoal(goal.id, "name", e.target.value)}
+              />
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</div>
+                <Input 
+                  id={`goal-target-${goal.id}`} 
+                  type="number" 
+                  placeholder="Target amount" 
+                  className="pl-7"
+                  value={goal.target}
+                  onChange={(e) => updateGoal(goal.id, "target", e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</div>
+                <Input 
+                  id={`goal-monthly-${goal.id}`} 
+                  type="number" 
+                  placeholder="Monthly contribution" 
+                  className="pl-7"
+                  value={goal.monthly}
+                  onChange={(e) => updateGoal(goal.id, "monthly", e.target.value)}
+                />
+              </div>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded px-3 py-2 text-sm flex items-center">
+                <span className="text-muted-foreground">
+                  Estimated: {calculateMonths(goal.target, goal.monthly)}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="vacation">Vacation</Label>
-          <Input id="vacation" type="number" placeholder="Target amount" />
-          <div className="grid grid-cols-2 gap-2 mt-1">
-            <Input type="number" placeholder="Monthly contribution" />
-            <div className="bg-gray-100 dark:bg-gray-800 rounded px-3 py-2 text-sm flex items-center">
-              <span className="text-muted-foreground">Estimated: 5 months</span>
-            </div>
-          </div>
-        </div>
+        ))}
         
         <Button 
           variant="outline" 
           className="text-finance-teal border-dashed border-finance-teal/50 hover:bg-finance-teal/10"
+          onClick={addGoal}
         >
           + Add another goal
         </Button>

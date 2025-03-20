@@ -1,5 +1,6 @@
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Label } from "recharts";
+import { useState } from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Label, Tooltip } from "recharts";
 import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -13,7 +14,29 @@ const data = [
 const savingsGoal = 2000;
 const savingsProgress = (1700 / savingsGoal) * 100;
 
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-gray-800 p-2 shadow-lg rounded border border-gray-200 dark:border-gray-700">
+        <p className="font-medium">{payload[0].name}</p>
+        <p className="text-lg font-semibold">${payload[0].value.toLocaleString()}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const MonthlySnapshot = () => {
+  const [activeIndex, setActiveIndex] = useState(null);
+
+  const onPieEnter = (_, index) => {
+    setActiveIndex(index);
+  };
+
+  const onPieLeave = () => {
+    setActiveIndex(null);
+  };
+
   return (
     <Card className="glass-card h-full">
       <CardHeader className="pb-2">
@@ -24,6 +47,7 @@ export const MonthlySnapshot = () => {
         <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
+              <Tooltip content={<CustomTooltip />} />
               <Pie
                 data={data}
                 cx="50%"
@@ -32,9 +56,17 @@ export const MonthlySnapshot = () => {
                 outerRadius={80}
                 paddingAngle={2}
                 dataKey="value"
+                onMouseEnter={onPieEnter}
+                onMouseLeave={onPieLeave}
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color} 
+                    opacity={activeIndex === null || activeIndex === index ? 1 : 0.5}
+                    stroke={activeIndex === index ? "#fff" : "none"}
+                    strokeWidth={activeIndex === index ? 2 : 0}
+                  />
                 ))}
                 <Label
                   value={`$${data[2].value}`}
@@ -49,7 +81,12 @@ export const MonthlySnapshot = () => {
         
         <div className="grid grid-cols-3 gap-4 mt-2">
           {data.map((item, index) => (
-            <div key={index} className="text-center">
+            <div 
+              key={index} 
+              className="text-center transition-all duration-200 hover:scale-105 p-1 rounded-md cursor-pointer"
+              onMouseEnter={() => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
+            >
               <div className="w-3 h-3 rounded-full mx-auto mb-1" style={{ backgroundColor: item.color }} />
               <p className="text-xs text-muted-foreground">{item.name}</p>
               <p className="font-medium">${item.value}</p>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Camera, Upload, CheckCircle, Save } from "lucide-react";
+import { Camera, Upload, CheckCircle, Save, Wallet } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const categories = [
@@ -31,6 +30,17 @@ const categories = [
   "Other"
 ];
 
+const incomeCategories = [
+  "Salary",
+  "Freelance",
+  "Investment",
+  "Rental",
+  "Gift",
+  "Refund",
+  "Business",
+  "Other"
+];
+
 export const ExpenseEntry = () => {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
@@ -41,7 +51,11 @@ export const ExpenseEntry = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<{ [key: string]: string } | null>(null);
-  
+  const [incomeAmount, setIncomeAmount] = useState("");
+  const [incomeCategory, setIncomeCategory] = useState("");
+  const [incomeDate, setIncomeDate] = useState(new Date().toISOString().split("T")[0]);
+  const [incomeNotes, setIncomeNotes] = useState("");
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -149,23 +163,50 @@ export const ExpenseEntry = () => {
     setExtractedData(null);
   };
 
+  const handleIncomeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!incomeAmount || !incomeCategory || !incomeDate) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Simulate saving income
+    toast({
+      title: "Income saved",
+      description: `$${incomeAmount} added from ${incomeCategory}`,
+      variant: "default"
+    });
+    
+    // Reset form
+    setIncomeAmount("");
+    setIncomeCategory("");
+    setIncomeDate(new Date().toISOString().split("T")[0]);
+    setIncomeNotes("");
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8 animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Add Expense</h1>
+        <h1 className="text-3xl font-bold mb-2">Money Manager</h1>
         <p className="text-muted-foreground">
-          Track your spending by adding new expenses manually or by uploading receipts.
+          Track your finances by adding expenses and income entries.
         </p>
       </div>
       
       <Card className="glass-card overflow-hidden">
-        <Tabs defaultValue="manual">
+        <Tabs defaultValue="expense">
           <TabsList className="w-full rounded-none border-b border-gray-200 dark:border-gray-700 bg-transparent px-6 pt-6">
-            <TabsTrigger value="manual" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">Manual Entry</TabsTrigger>
+            <TabsTrigger value="expense" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">Expense</TabsTrigger>
+            <TabsTrigger value="income" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">Income</TabsTrigger>
             <TabsTrigger value="receipt" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">Upload Receipt</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="manual" className="p-6 pt-4">
+          <TabsContent value="expense" className="p-6 pt-4">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -230,6 +271,76 @@ export const ExpenseEntry = () => {
                 >
                   <Save className="mr-2 h-4 w-4" />
                   Save Expense
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="income" className="p-6 pt-4">
+            <form onSubmit={handleIncomeSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="income-amount">Amount</Label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</div>
+                    <Input
+                      id="income-amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={incomeAmount}
+                      onChange={(e) => setIncomeAmount(e.target.value)}
+                      className="pl-7"
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="income-category">Source</Label>
+                  <Select value={incomeCategory} onValueChange={setIncomeCategory} required>
+                    <SelectTrigger id="income-category">
+                      <SelectValue placeholder="Select income source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {incomeCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="income-date">Date</Label>
+                  <Input
+                    id="income-date"
+                    type="date"
+                    value={incomeDate}
+                    onChange={(e) => setIncomeDate(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="income-notes">Notes</Label>
+                  <Textarea
+                    id="income-notes"
+                    value={incomeNotes}
+                    onChange={(e) => setIncomeNotes(e.target.value)}
+                    placeholder="Add any additional details..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  type="submit" 
+                  className="bg-finance-success hover:bg-finance-success/90 text-white"
+                >
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Save Income
                 </Button>
               </div>
             </form>
