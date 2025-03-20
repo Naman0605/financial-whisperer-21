@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { EyeIcon, EyeOffIcon, LogInIcon, UserRoundIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LogInIcon } from "lucide-react";
 
 const Signin = () => {
   const navigate = useNavigate();
@@ -27,7 +27,9 @@ const Signin = () => {
         title: "Signed in successfully",
         description: "Welcome back to FinWhisperer!",
       });
-      navigate("/dashboard");
+      
+      // Redirect to home page after sign in
+      navigate("/");
     }, 1500);
   };
 

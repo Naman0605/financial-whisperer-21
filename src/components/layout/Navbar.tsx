@@ -21,7 +21,9 @@ export const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isLanding = location.pathname === "/";
-  const isLoggedIn = true; // Simulate logged in state
+  
+  // Check if user is on signin page to determine logged in state
+  const isLoggedIn = location.pathname !== "/signin";
 
   useEffect(() => {
     const handleScroll = () => {

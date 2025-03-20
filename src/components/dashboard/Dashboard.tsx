@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MonthlySnapshot from "./MonthlySnapshot";
@@ -137,13 +136,13 @@ export const Dashboard = () => {
                 <div className="flex items-center gap-2">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-8 z-10">
+                      <Button variant="outline" size="sm" className="h-8">
                         <Filter className="h-4 w-4 mr-2" />
                         Filter
                         <ChevronDown className="h-4 w-4 ml-1" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 z-50">
+                    <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800" style={{ zIndex: 100 }}>
                       <div className="p-2">
                         <div className="space-y-2">
                           <p className="text-xs font-medium text-muted-foreground">Month</p>
@@ -151,7 +150,7 @@ export const Dashboard = () => {
                             <SelectTrigger>
                               <SelectValue placeholder="Select Month" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper">
                               {months.map((month) => (
                                 <SelectItem key={month.value} value={month.value}>
                                   {month.label}
@@ -167,7 +166,7 @@ export const Dashboard = () => {
                             <SelectTrigger>
                               <SelectValue placeholder="Sort By" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper">
                               {sortOptions.map((option) => (
                                 <SelectItem key={option.value} value={option.value}>
                                   {option.label}

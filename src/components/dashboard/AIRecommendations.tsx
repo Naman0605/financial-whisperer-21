@@ -1,12 +1,28 @@
 
 import { Button } from "@/components/ui/button";
 import { Lightbulb, Trash, Repeat, CreditCard, Calendar, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 interface AIRecommendationsProps {
   onViewDetails?: () => void;
 }
 
 const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
+  const navigate = useNavigate();
+  
+  const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails();
+    } else {
+      toast({
+        title: "AI Recommendations",
+        description: "Viewing detailed financial recommendations",
+      });
+      navigate("/dashboard");
+    }
+  };
+
   return (
     <div className="glass-card h-full">
       <div className="p-6">
@@ -86,7 +102,7 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
         <Button 
           variant="outline" 
           className="w-full mt-4 text-finance-teal border-finance-teal/50 hover:bg-finance-teal/10"
-          onClick={onViewDetails}
+          onClick={handleViewDetails}
         >
           View Details
           <ArrowRight className="h-4 w-4 ml-2" />
