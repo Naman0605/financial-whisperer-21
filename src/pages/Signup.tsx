@@ -6,14 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { EyeIcon, EyeOffIcon, LogInIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const Signin = () => {
-  const { signIn, user, isLoading } = useAuth();
+const Signup = () => {
+  const { signUp, user, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // If user is already authenticated, redirect to dashboard
@@ -21,12 +23,32 @@ const Signin = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const validatePassword = () => {
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return false;
+    }
+    
+    if (password.length < 6) {
+      setPasswordError("Password must be at least 6 characters");
+      return false;
+    }
+    
+    setPasswordError("");
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validatePassword()) {
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      await signIn(email, password);
+      await signUp(email, password);
     } finally {
       setIsSubmitting(false);
     }
@@ -44,14 +66,14 @@ const Signin = () => {
             </svg>
             FinWhisperer
           </Link>
-          <p className="text-muted-foreground">Sign in to access your financial dashboard</p>
+          <p className="text-muted-foreground">Create your account to get started</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
+            <CardTitle>Sign Up</CardTitle>
             <CardDescription>
-              Enter your email and password to access your account
+              Enter your details to create a new account
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -69,12 +91,7 @@ const Signin = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link to="/forgot-password" className="text-sm text-finance-teal hover:underline">
-                      Forgot password?
-                    </Link>
-                  </div>
+                  <Label htmlFor="password">Password</Label>
                   <div className="relative">
                     <Input
                       id="password"
@@ -99,6 +116,20 @@ const Signin = () => {
                     </Button>
                   </div>
                 </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                  {passwordError && (
+                    <p className="text-sm text-red-500">{passwordError}</p>
+                  )}
+                </div>
                 <Button type="submit" className="bg-finance-teal hover:bg-finance-teal/90" disabled={isSubmitting || isLoading}>
                   {isSubmitting || isLoading ? (
                     <div className="flex items-center">
@@ -106,12 +137,12 @@ const Signin = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Signing in...
+                      Creating account...
                     </div>
                   ) : (
                     <div className="flex items-center">
-                      <LogInIcon className="mr-2 h-4 w-4" />
-                      Sign In
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Sign Up
                     </div>
                   )}
                 </Button>
@@ -150,9 +181,9 @@ const Signin = () => {
           </CardContent>
           <CardFooter className="flex flex-col">
             <p className="text-sm text-muted-foreground text-center">
-              Don't have an account?{" "}
-              <Link to="/signup" className="text-finance-teal hover:underline">
-                Sign up
+              Already have an account?{" "}
+              <Link to="/signin" className="text-finance-teal hover:underline">
+                Sign in
               </Link>
             </p>
           </CardFooter>
@@ -162,4 +193,4 @@ const Signin = () => {
   );
 };
 
-export default Signin;
+export default Signup;

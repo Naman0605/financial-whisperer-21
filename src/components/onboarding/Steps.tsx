@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -16,37 +15,12 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-export const ExpensesStep = () => {
-  const [expenses, setExpenses] = useState([
-    { id: 1, name: "Rent/Mortgage", amount: "" },
-    { id: 2, name: "Utilities", amount: "" },
-    { id: 3, name: "Groceries", amount: "" },
-    { id: 4, name: "Transportation", amount: "" }
-  ]);
-
-  const addExpense = () => {
-    const newId = Math.max(...expenses.map(exp => exp.id)) + 1;
-    setExpenses([...expenses, { id: newId, name: "", amount: "" }]);
-  };
-
-  const removeExpense = (id) => {
-    if (expenses.length <= 1) {
-      toast({
-        title: "Cannot remove",
-        description: "You need at least one expense category.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setExpenses(expenses.filter(exp => exp.id !== id));
-  };
-
-  const updateExpense = (id, field, value) => {
-    setExpenses(expenses.map(exp => 
-      exp.id === id ? { ...exp, [field]: value } : exp
-    ));
-  };
-
+export const ExpensesStep = ({ 
+  expenses, 
+  onUpdateExpense, 
+  onAddExpense, 
+  onRemoveExpense 
+}) => {
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -68,7 +42,7 @@ export const ExpensesStep = () => {
                 variant="ghost" 
                 size="icon" 
                 className="h-6 w-6" 
-                onClick={() => removeExpense(expense.id)}
+                onClick={() => onRemoveExpense(expense.id)}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -78,7 +52,7 @@ export const ExpensesStep = () => {
                 id={`expense-name-${expense.id}`} 
                 placeholder="Expense name" 
                 value={expense.name}
-                onChange={(e) => updateExpense(expense.id, "name", e.target.value)}
+                onChange={(e) => onUpdateExpense(expense.id, "name", e.target.value)}
               />
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
@@ -88,7 +62,7 @@ export const ExpensesStep = () => {
                   placeholder="0.00" 
                   className="pl-7"
                   value={expense.amount}
-                  onChange={(e) => updateExpense(expense.id, "amount", e.target.value)}
+                  onChange={(e) => onUpdateExpense(expense.id, "amount", e.target.value)}
                 />
               </div>
             </div>
@@ -98,7 +72,7 @@ export const ExpensesStep = () => {
         <Button 
           variant="outline" 
           className="text-finance-teal border-dashed border-finance-teal/50 hover:bg-finance-teal/10"
-          onClick={addExpense}
+          onClick={onAddExpense}
         >
           + Add another expense
         </Button>
@@ -162,36 +136,12 @@ export const BankLinkStep = () => {
   );
 };
 
-export const SavingsGoalsStep = () => {
-  const [goals, setGoals] = useState([
-    { id: 1, name: "Emergency Fund", target: "", monthly: "" },
-    { id: 2, name: "Vacation", target: "", monthly: "" }
-  ]);
-
-  const addGoal = () => {
-    const newId = Math.max(...goals.map(goal => goal.id)) + 1;
-    setGoals([...goals, { id: newId, name: "", target: "", monthly: "" }]);
-  };
-
-  const removeGoal = (id) => {
-    if (goals.length <= 1) {
-      toast({
-        title: "Cannot remove",
-        description: "You need at least one savings goal.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setGoals(goals.filter(goal => goal.id !== id));
-  };
-
-  const updateGoal = (id, field, value) => {
-    setGoals(goals.map(goal => 
-      goal.id === id ? { ...goal, [field]: value } : goal
-    ));
-  };
-
-  // Calculate estimated months to reach goal
+export const SavingsGoalsStep = ({ 
+  goals, 
+  onUpdateGoal, 
+  onAddGoal, 
+  onRemoveGoal 
+}) => {
   const calculateMonths = (target, monthly) => {
     if (!target || !monthly || monthly <= 0) return "N/A";
     const months = Math.ceil(parseFloat(target) / parseFloat(monthly));
@@ -219,7 +169,7 @@ export const SavingsGoalsStep = () => {
                 variant="ghost" 
                 size="icon" 
                 className="h-6 w-6" 
-                onClick={() => removeGoal(goal.id)}
+                onClick={() => onRemoveGoal(goal.id)}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -229,7 +179,7 @@ export const SavingsGoalsStep = () => {
                 id={`goal-name-${goal.id}`} 
                 placeholder="Goal name" 
                 value={goal.name}
-                onChange={(e) => updateGoal(goal.id, "name", e.target.value)}
+                onChange={(e) => onUpdateGoal(goal.id, "name", e.target.value)}
               />
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
@@ -239,7 +189,7 @@ export const SavingsGoalsStep = () => {
                   placeholder="Target amount" 
                   className="pl-7"
                   value={goal.target}
-                  onChange={(e) => updateGoal(goal.id, "target", e.target.value)}
+                  onChange={(e) => onUpdateGoal(goal.id, "target", e.target.value)}
                 />
               </div>
             </div>
@@ -252,7 +202,7 @@ export const SavingsGoalsStep = () => {
                   placeholder="Monthly contribution" 
                   className="pl-7"
                   value={goal.monthly}
-                  onChange={(e) => updateGoal(goal.id, "monthly", e.target.value)}
+                  onChange={(e) => onUpdateGoal(goal.id, "monthly", e.target.value)}
                 />
               </div>
               <div className="bg-gray-100 dark:bg-gray-800 rounded px-3 py-2 text-sm flex items-center">
@@ -267,7 +217,7 @@ export const SavingsGoalsStep = () => {
         <Button 
           variant="outline" 
           className="text-finance-teal border-dashed border-finance-teal/50 hover:bg-finance-teal/10"
-          onClick={addGoal}
+          onClick={onAddGoal}
         >
           + Add another goal
         </Button>

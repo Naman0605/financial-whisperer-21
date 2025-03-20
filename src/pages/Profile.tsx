@@ -1,346 +1,190 @@
 
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LogOut, Key, Save, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { User, Wallet, Bell, Shield, LogOut } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    firstName: "Rahul",
-    lastName: "Sharma",
-    email: "rahul.sharma@example.com",
-    phone: "+91 9876543210",
-    currency: "INR",
-    language: "en-IN",
-    timeZone: "Asia/Kolkata",
-    notifications: {
-      email: true,
-      push: true,
-      sms: false,
-      weeklyReport: true,
-      unusualActivity: true,
-      newFeatures: false
+  const { user, signOut } = useAuth();
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "New password and confirmation must match.",
+        variant: "destructive"
+      });
+      return;
     }
-  });
-
-  const handleChange = (field, value) => {
-    setProfileData({ ...profileData, [field]: value });
-  };
-
-  const handleNotificationChange = (field, value) => {
-    setProfileData({
-      ...profileData,
-      notifications: { ...profileData.notifications, [field]: value }
-    });
-  };
-
-  const handleSave = () => {
-    setIsEditing(false);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile settings have been saved."
-    });
-  };
-
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully."
-    });
-    // Navigate to home page or login page
+    
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully."
+      });
+      
+      // Clear form
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast({
+        title: "Error changing password",
+        description: error.message || "There was an error updating your password.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navbar />
-      <div className="container max-w-6xl mx-auto pt-20 px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Account Settings</h1>
-          <Button 
-            variant="outline" 
-            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-red-800 dark:hover:bg-red-950"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+    <div className="container max-w-4xl py-8">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Account Profile</h1>
+          <p className="text-muted-foreground">
+            Manage your account settings and password
+          </p>
         </div>
-
-        <div className="glass-card">
-          <Tabs defaultValue="profile">
-            <TabsList className="w-full max-w-md grid grid-cols-3 mb-8">
-              <TabsTrigger value="profile" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Profile</span>
-              </TabsTrigger>
-              <TabsTrigger value="preferences" className="flex items-center gap-2">
-                <Wallet className="h-4 w-4" />
-                <span className="hidden sm:inline">Preferences</span>
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                <span className="hidden sm:inline">Notifications</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="p-6">
-              <TabsContent value="profile">
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">Personal Information</h2>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-                      className={isEditing ? "bg-finance-teal text-white hover:bg-finance-teal/90" : ""}
-                    >
-                      {isEditing ? "Save Changes" : "Edit Profile"}
-                    </Button>
+        
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Account Info
+              </CardTitle>
+              <CardDescription>
+                Your basic account information
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <div className="rounded-md border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-800 px-4 py-3">
+                    {user?.email}
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input 
-                        id="firstName" 
-                        value={profileData.firstName} 
-                        onChange={(e) => handleChange('firstName', e.target.value)} 
-                        disabled={!isEditing}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input 
-                        id="lastName" 
-                        value={profileData.lastName} 
-                        onChange={(e) => handleChange('lastName', e.target.value)} 
-                        disabled={!isEditing}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        value={profileData.email} 
-                        onChange={(e) => handleChange('email', e.target.value)} 
-                        disabled={!isEditing}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input 
-                        id="phone" 
-                        value={profileData.phone} 
-                        onChange={(e) => handleChange('phone', e.target.value)} 
-                        disabled={!isEditing}
-                      />
-                    </div>
-                  </div>
-
-                  <Separator className="my-6" />
-
-                  <div>
-                    <h2 className="text-xl font-semibold mb-4">Security</h2>
-                    <div className="space-y-4">
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start text-left"
-                        disabled={!isEditing}
-                      >
-                        <Shield className="mr-2 h-4 w-4" />
-                        Change Password
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start text-left"
-                        disabled={!isEditing}
-                      >
-                        <Shield className="mr-2 h-4 w-4" />
-                        Two-Factor Authentication
-                      </Button>
-                    </div>
+                  <p className="text-sm text-muted-foreground">
+                    Your email address is used to sign in
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>User ID</Label>
+                  <div className="rounded-md border border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-800 px-4 py-3 text-xs font-mono break-all">
+                    {user?.id}
                   </div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="preferences">
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">App Preferences</h2>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-                      className={isEditing ? "bg-finance-teal text-white hover:bg-finance-teal/90" : ""}
-                    >
-                      {isEditing ? "Save Changes" : "Edit Preferences"}
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="currency">Currency</Label>
-                      <Select 
-                        value={profileData.currency} 
-                        onValueChange={(value) => handleChange('currency', value)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger id="currency">
-                          <SelectValue placeholder="Select currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="INR">Indian Rupee (₹)</SelectItem>
-                          <SelectItem value="USD">US Dollar ($)</SelectItem>
-                          <SelectItem value="EUR">Euro (€)</SelectItem>
-                          <SelectItem value="GBP">British Pound (£)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="language">Language</Label>
-                      <Select 
-                        value={profileData.language} 
-                        onValueChange={(value) => handleChange('language', value)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger id="language">
-                          <SelectValue placeholder="Select language" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="en-IN">English (India)</SelectItem>
-                          <SelectItem value="hi-IN">Hindi</SelectItem>
-                          <SelectItem value="en-US">English (US)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="timeZone">Time Zone</Label>
-                      <Select 
-                        value={profileData.timeZone} 
-                        onValueChange={(value) => handleChange('timeZone', value)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger id="timeZone">
-                          <SelectValue placeholder="Select time zone" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Asia/Kolkata">Indian Standard Time (IST)</SelectItem>
-                          <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                          <SelectItem value="Europe/London">Greenwich Mean Time (GMT)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                variant="destructive" 
+                className="w-full" 
+                onClick={signOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="h-5 w-5" />
+                Change Password
+              </CardTitle>
+              <CardDescription>
+                Update your password to keep your account secure
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current-password">Current Password</Label>
+                  <Input 
+                    id="current-password" 
+                    type="password" 
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    required
+                  />
                 </div>
-              </TabsContent>
-
-              <TabsContent value="notifications">
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">Notification Settings</h2>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-                      className={isEditing ? "bg-finance-teal text-white hover:bg-finance-teal/90" : ""}
-                    >
-                      {isEditing ? "Save Changes" : "Edit Notifications"}
-                    </Button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Notification Channels</h3>
-                    <div className="grid gap-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="email-notifications">Email Notifications</Label>
-                          <p className="text-sm text-muted-foreground">Receive notifications via email</p>
-                        </div>
-                        <Switch 
-                          id="email-notifications"
-                          checked={profileData.notifications.email}
-                          onCheckedChange={(checked) => handleNotificationChange('email', checked)}
-                          disabled={!isEditing}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="push-notifications">Push Notifications</Label>
-                          <p className="text-sm text-muted-foreground">Receive notifications on your device</p>
-                        </div>
-                        <Switch 
-                          id="push-notifications"
-                          checked={profileData.notifications.push}
-                          onCheckedChange={(checked) => handleNotificationChange('push', checked)}
-                          disabled={!isEditing}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="sms-notifications">SMS Notifications</Label>
-                          <p className="text-sm text-muted-foreground">Receive notifications via SMS</p>
-                        </div>
-                        <Switch 
-                          id="sms-notifications"
-                          checked={profileData.notifications.sms}
-                          onCheckedChange={(checked) => handleNotificationChange('sms', checked)}
-                          disabled={!isEditing}
-                        />
-                      </div>
-                    </div>
-
-                    <Separator className="my-4" />
-
-                    <h3 className="text-lg font-medium">Notification Types</h3>
-                    <div className="grid gap-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="weekly-report">Weekly Report</Label>
-                          <p className="text-sm text-muted-foreground">Receive a weekly summary of your finances</p>
-                        </div>
-                        <Switch 
-                          id="weekly-report"
-                          checked={profileData.notifications.weeklyReport}
-                          onCheckedChange={(checked) => handleNotificationChange('weeklyReport', checked)}
-                          disabled={!isEditing}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="unusual-activity">Unusual Activity</Label>
-                          <p className="text-sm text-muted-foreground">Get alerted about suspicious transactions</p>
-                        </div>
-                        <Switch 
-                          id="unusual-activity"
-                          checked={profileData.notifications.unusualActivity}
-                          onCheckedChange={(checked) => handleNotificationChange('unusualActivity', checked)}
-                          disabled={!isEditing}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="new-features">New Features</Label>
-                          <p className="text-sm text-muted-foreground">Learn about new features and updates</p>
-                        </div>
-                        <Switch 
-                          id="new-features"
-                          checked={profileData.notifications.newFeatures}
-                          onCheckedChange={(checked) => handleNotificationChange('newFeatures', checked)}
-                          disabled={!isEditing}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input 
+                    id="new-password" 
+                    type="password" 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
                 </div>
-              </TabsContent>
-            </div>
-          </Tabs>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <Input 
+                    id="confirm-password" 
+                    type="password" 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-finance-teal hover:bg-finance-teal/90"
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword ? (
+                    <div className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Updating...
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <Save className="mr-2 h-4 w-4" />
+                      Update Password
+                    </div>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
