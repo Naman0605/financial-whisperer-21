@@ -133,9 +133,6 @@ export const BankLinkStep = () => {
           </div>
         </div>
         
-        <Separator className="w-full">
-          <span className="px-2 text-xs text-muted-foreground">OR</span>
-        </Separator>
         
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md cursor-pointer transition-all w-full">
           <div className="flex items-center gap-3">
@@ -149,9 +146,6 @@ export const BankLinkStep = () => {
           </div>
         </div>
         
-        <Separator className="w-full">
-          <span className="px-2 text-xs text-muted-foreground">OR</span>
-        </Separator>
         
         <Button 
           variant="outline" 
