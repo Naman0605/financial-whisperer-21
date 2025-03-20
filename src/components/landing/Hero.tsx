@@ -102,7 +102,7 @@ export const Hero = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200/50 dark:border-gray-700/30">
                 <h4 className="text-sm font-medium mb-2">Monthly Savings</h4>
-                <p className="text-2xl font-bold text-finance-teal">$328.50</p>
+                <p className="text-2xl font-bold text-finance-teal">₹24,500</p>
                 <div className="h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full mt-2 overflow-hidden">
                   <div className="h-full bg-finance-teal w-3/4 rounded-full" />
                 </div>
@@ -110,7 +110,7 @@ export const Hero = () => {
               
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200/50 dark:border-gray-700/30">
                 <h4 className="text-sm font-medium mb-2">Spending vs Budget</h4>
-                <p className="text-2xl font-bold text-finance-slate">$1,245.80</p>
+                <p className="text-2xl font-bold text-finance-slate">₹45,800</p>
                 <div className="h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full mt-2 overflow-hidden">
                   <div className="h-full bg-finance-slate w-1/2 rounded-full" />
                 </div>
@@ -131,9 +131,9 @@ export const Hero = () => {
               
               <div className="space-y-2">
                 {[
-                  { name: "Grocery Store", amount: "$68.23", date: "Today" },
-                  { name: "Coffee Shop", amount: "$4.50", date: "Yesterday" },
-                  { name: "Monthly Subscription", amount: "$12.99", date: "Jan 12" }
+                  { name: "Grocery Store", amount: "₹3,500", date: "Today" },
+                  { name: "Coffee Shop", amount: "₹150", date: "Yesterday" },
+                  { name: "Monthly Subscription", amount: "₹499", date: "Jan 12" }
                 ].map((item, index) => (
                   <div key={index} className="flex items-center justify-between py-2 border-b border-gray-200/50 dark:border-gray-700/30 last:border-0">
                     <div>

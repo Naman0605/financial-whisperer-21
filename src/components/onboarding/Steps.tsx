@@ -63,7 +63,7 @@ export const ExpensesStep = () => {
         {expenses.map((expense) => (
           <div key={expense.id} className="grid gap-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor={`expense-name-${expense.id}`}>{expense.name || "Expense Name"}</Label>
+              <Label htmlFor={`expense-name-${expense.id}`}>Expense Name</Label>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -81,7 +81,7 @@ export const ExpensesStep = () => {
                 onChange={(e) => updateExpense(expense.id, "name", e.target.value)}
               />
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</div>
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
                 <Input 
                   id={`expense-amount-${expense.id}`} 
                   type="number" 
@@ -128,7 +128,7 @@ export const BankLinkStep = () => {
             </div>
             <div>
               <p className="font-medium">Connect to your bank</p>
-              <p className="text-sm text-muted-foreground">This feature is coming soon</p>
+              <p className="text-sm text-muted-foreground">This feature is yet to come</p>
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@ export const SavingsGoalsStep = () => {
         {goals.map((goal) => (
           <div key={goal.id} className="grid gap-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor={`goal-name-${goal.id}`}>{goal.name || "Goal Name"}</Label>
+              <Label htmlFor={`goal-name-${goal.id}`}>Goal Name</Label>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -232,7 +232,7 @@ export const SavingsGoalsStep = () => {
                 onChange={(e) => updateGoal(goal.id, "name", e.target.value)}
               />
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</div>
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
                 <Input 
                   id={`goal-target-${goal.id}`} 
                   type="number" 
@@ -245,7 +245,7 @@ export const SavingsGoalsStep = () => {
             </div>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</div>
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
                 <Input 
                   id={`goal-monthly-${goal.id}`} 
                   type="number" 

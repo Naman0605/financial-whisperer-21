@@ -84,7 +84,7 @@ export const CallToAction = () => {
                     <div className="w-full max-w-xs aspect-square rounded-full bg-gradient-to-br from-finance-teal/20 to-finance-gold/20 flex items-center justify-center relative">
                       <div className="absolute inset-4 rounded-full border-4 border-dashed border-finance-teal/30 animate-spin" style={{ animationDuration: '20s' }} />
                       <div className="text-center">
-                        <p className="text-4xl md:text-5xl font-bold text-finance-teal">$24,600</p>
+                        <p className="text-4xl md:text-5xl font-bold text-finance-teal">₹2,24,600</p>
                         <p className="text-sm text-muted-foreground mt-2">Potential 5-year savings</p>
                       </div>
                     </div>
