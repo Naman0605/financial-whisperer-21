@@ -114,7 +114,7 @@ export const BankLinkStep = () => {
               <FileText className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="font-medium">Upload a CSV file</p>
+              <p className="font-medium">Please Upload a CSV file</p>
               <p className="text-sm text-muted-foreground">Import your transaction history</p>
             </div>
           </div>
