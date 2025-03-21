@@ -2,7 +2,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Coffee, Sparkles, BarChart3 } from "lucide-react";
+import { Send, Coffee, Sparkles, BarChart3, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 interface Message {
   id: number;
@@ -22,15 +25,60 @@ export const AIChatWidget = () => {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [expenses, setExpenses] = useState([]);
+  const [goals, setGoals] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   
-  const handleSend = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user]);
+  
+  const fetchUserData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch expenses
+      const { data: expensesData, error: expensesError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (expensesError) throw expensesError;
+      
+      // Fetch goals
+      const { data: goalsData, error: goalsError } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (goalsError) throw goalsError;
+      
+      setExpenses(expensesData || []);
+      setGoals(goalsData || []);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load your financial data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
     
     const userMessage: Message = {
       id: messages.length + 1,
@@ -38,46 +86,60 @@ export const AIChatWidget = () => {
       sender: "user"
     };
     
-    setMessages([...messages, userMessage]);
+    setMessages(prevMessages => [...prevMessages, userMessage]);
     setInput("");
-    simulateResponse(input);
-  };
-  
-  const simulateResponse = (question: string) => {
-    setIsTyping(true);
     
     // Add typing indicator
+    setIsTyping(true);
     const loadingId = messages.length + 2;
-    setMessages(prev => [...prev, { id: loadingId, text: "", sender: "bot", isLoading: true }]);
+    setMessages(prevMessages => [...prevMessages, { id: loadingId, text: "", sender: "bot", isLoading: true }]);
     
-    setTimeout(() => {
-      setIsTyping(false);
+    try {
+      // Prepare the financial context to send to the API
+      const financialContext = {
+        expenses,
+        goals
+      };
       
-      let responseText = "";
-      let chart: "bar" | "pie" | null = null;
+      // Call our AI chat Supabase function
+      const response = await fetch(`${window.location.origin}/api/ai-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: input, financialContext }),
+      });
       
-      if (question.toLowerCase().includes("coffee")) {
-        responseText = "Last month, you spent $42.50 on coffee across 17 transactions. This is about 15% less than your average monthly coffee spending ($49.75).";
-        chart = "bar";
-      } else if (
-        question.toLowerCase().includes("spending") && 
-        question.toLowerCase().includes("category")
-      ) {
-        responseText = "Here's your spending breakdown by category for April 2023:\n\nHousing: $1,200 (42.9%)\nFood: $450 (16.1%)\nTransportation: $350 (12.5%)\nEntertainment: $300 (10.7%)\nUtilities: $250 (8.9%)\nShopping: $150 (5.4%)\nOther: $100 (3.6%)";
-        chart = "pie";
-      } else if (question.toLowerCase().includes("save")) {
-        responseText = "Based on your current spending patterns, you could save approximately $320 more per month by:\n\n1. Reducing dining out expenses by $150\n2. Optimizing subscription services to save $45\n3. Using a cash-back credit card for daily purchases to earn about $75\n4. Adjusting your utility usage to save around $50";
-      } else {
-        responseText = "I'll analyze your finances to answer that question. Would you like me to create a visualization for this data as well?";
+      if (!response.ok) {
+        throw new Error('Failed to get a response from the AI');
       }
       
+      const data = await response.json();
+      
       // Replace loading message with actual response
-      setMessages(prev => prev.map(msg => 
+      setMessages(prevMessages => prevMessages.map(msg => 
         msg.id === loadingId 
-          ? { id: msg.id, text: responseText, sender: "bot", chart } 
+          ? { id: msg.id, text: data.response, sender: "bot", chart: data.chart } 
           : msg
       ));
-    }, 1500);
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      
+      // Replace loading message with error
+      setMessages(prevMessages => prevMessages.map(msg => 
+        msg.id === loadingId 
+          ? { id: msg.id, text: "Sorry, I encountered an error processing your request. Please try again later.", sender: "bot" } 
+          : msg
+      ));
+      
+      toast({
+        title: "Error",
+        description: "Failed to get a response from the AI assistant.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTyping(false);
+    }
   };
   
   const renderSuggestions = () => {
@@ -98,15 +160,34 @@ export const AIChatWidget = () => {
             className="text-xs"
             onClick={() => {
               setInput(suggestion);
-              simulateResponse(suggestion);
-              setMessages([...messages, { id: messages.length + 1, text: suggestion, sender: "user" }]);
+              handleSuggestedMessage(suggestion);
             }}
+            disabled={isTyping}
           >
             {suggestion}
           </Button>
         ))}
       </div>
     );
+  };
+  
+  const handleSuggestedMessage = (message: string) => {
+    const userMessage: Message = {
+      id: messages.length + 1,
+      text: message,
+      sender: "user"
+    };
+    
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+    
+    // Simulate the form submission
+    const event = { preventDefault: () => {} } as React.FormEvent;
+    setInput(message);
+    
+    // Use a timeout to allow state to update
+    setTimeout(() => {
+      handleSend(event);
+    }, 100);
   };
   
   const renderChart = (type: "bar" | "pie") => {
@@ -125,7 +206,7 @@ export const AIChatWidget = () => {
                 <div key={i} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
                     <span>{month}</span>
-                    <span>${values[i]}</span>
+                    <span>₹{values[i]}</span>
                   </div>
                   <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div 
@@ -181,6 +262,17 @@ export const AIChatWidget = () => {
     
     return null;
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 text-finance-teal animate-spin" />
+          <p>Loading your financial data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">

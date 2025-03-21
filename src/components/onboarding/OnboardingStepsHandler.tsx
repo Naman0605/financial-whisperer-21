@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +34,40 @@ export const useOnboardingSteps = () => {
       await saveGoals();
     }
     
+    // When completing the final step, generate AI recommendations
+    if (currentStep === totalSteps - 1) {
+      try {
+        // Send user data to the AI recommendations function
+        const userData = {
+          expenses: expenses.filter(exp => exp.name && exp.amount),
+          goals: goals.filter(goal => goal.name && goal.target)
+        };
+        
+        toast({
+          title: "Generating recommendations",
+          description: "Our AI is analyzing your financial data...",
+        });
+        
+        const response = await fetch(`${window.location.protocol}//${window.location.host}/api/ai-recommendations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userData }),
+        }).catch(error => {
+          console.error("Error calling AI recommendations:", error);
+        });
+
+        // Store the recommendations if the API call was successful
+        if (response?.ok) {
+          const recommendations = await response.json();
+          localStorage.setItem('aiRecommendations', JSON.stringify(recommendations));
+        }
+      } catch (error) {
+        console.error("Error generating AI recommendations:", error);
+      }
+    }
+    
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
       window.scrollTo(0, 0);
@@ -57,7 +90,6 @@ export const useOnboardingSteps = () => {
     );
   };
 
-  
   const addExpense = () => {
     const newExpense = { id: uuidv4(), name: "", amount: "" };
     setExpenses([...expenses, newExpense]);
@@ -100,7 +132,6 @@ export const useOnboardingSteps = () => {
     setGoals(goals.filter(goal => goal.id !== id));
   };
   
-  // Save expenses to Supabase
   const saveExpenses = async () => {
     if (!user) return;
     
@@ -140,7 +171,6 @@ export const useOnboardingSteps = () => {
     }
   };
   
-  // Save goals to Supabase
   const saveGoals = async () => {
     if (!user) return;
     

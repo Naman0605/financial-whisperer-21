@@ -1,8 +1,50 @@
-
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Trash, Repeat, CreditCard, Calendar, ArrowRight } from "lucide-react";
+import { Lightbulb, Trash, Repeat, CreditCard, Calendar, ArrowRight, ShoppingBag, Smartphone, Utensils, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Recommendation {
+  title: string;
+  description: string;
+  savings: string;
+  icon: string;
+}
+
+interface AIRecommendationData {
+  recommendations: Recommendation[];
+  analysis: string;
+  savingsStrategy: string;
+}
+
+const defaultRecommendations: Recommendation[] = [
+  {
+    title: "Cancel unused subscriptions",
+    description: "We found 2 subscriptions you haven't used in 3+ months",
+    savings: "₹650/month",
+    icon: "Trash"
+  },
+  {
+    title: "Switch utility provider",
+    description: "Based on your usage patterns, a different plan could be cheaper",
+    savings: "₹1,200/year",
+    icon: "Repeat"
+  },
+  {
+    title: "Consider a different credit card",
+    description: "Your spending would earn more rewards with this card",
+    savings: "₹3,500 more in rewards",
+    icon: "CreditCard"
+  },
+  {
+    title: "Set up automatic bill payments",
+    description: "You've paid ₹450 in late fees this year",
+    savings: "Avoid late fees in the future",
+    icon: "Calendar"
+  }
+];
 
 interface AIRecommendationsProps {
   onViewDetails?: () => void;
@@ -10,6 +52,89 @@ interface AIRecommendationsProps {
 
 const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [recommendations, setRecommendations] = useState<Recommendation[]>(defaultRecommendations);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const storedRecommendations = localStorage.getItem('aiRecommendations');
+    
+    if (storedRecommendations) {
+      try {
+        const parsedData: AIRecommendationData = JSON.parse(storedRecommendations);
+        if (parsedData.recommendations && Array.isArray(parsedData.recommendations)) {
+          setRecommendations(parsedData.recommendations);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error parsing stored recommendations:", error);
+        generateRecommendations();
+      }
+    } else if (user) {
+      generateRecommendations();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user]);
+  
+  const generateRecommendations = async () => {
+    setIsLoading(true);
+    
+    try {
+      const { data: expenses, error: expensesError } = await supabase
+        .from('expenses')
+        .select('name, amount')
+        .eq('user_id', user.id);
+      
+      if (expensesError) throw expensesError;
+      
+      const { data: goals, error: goalsError } = await supabase
+        .from('goals')
+        .select('name, target_amount')
+        .eq('user_id', user.id);
+      
+      if (goalsError) throw goalsError;
+      
+      if (!expenses?.length && !goals?.length) {
+        setIsLoading(false);
+        return;
+      }
+      
+      const userData = {
+        expenses: expenses.map(exp => ({ name: exp.name, amount: exp.amount })),
+        goals: goals.map(goal => ({ name: goal.name, target: goal.target_amount }))
+      };
+      
+      const response = await fetch(`${window.location.origin}/api/ai-recommendations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userData }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate recommendations');
+      }
+      
+      const data = await response.json();
+      
+      localStorage.setItem('aiRecommendations', JSON.stringify(data));
+      
+      if (data.recommendations && Array.isArray(data.recommendations)) {
+        setRecommendations(data.recommendations);
+      }
+    } catch (error) {
+      console.error("Error generating recommendations:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate personalized recommendations.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const handleViewDetails = () => {
     if (onViewDetails) {
@@ -23,6 +148,30 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
     }
   };
 
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case "Trash": return <Trash className="h-5 w-5" />;
+      case "Repeat": return <Repeat className="h-5 w-5" />;
+      case "CreditCard": return <CreditCard className="h-5 w-5" />;
+      case "Calendar": return <Calendar className="h-5 w-5" />;
+      case "ShoppingBag": return <ShoppingBag className="h-5 w-5" />;
+      case "Smartphone": return <Smartphone className="h-5 w-5" />;
+      case "Utensils": return <Utensils className="h-5 w-5" />;
+      default: return <Lightbulb className="h-5 w-5" />;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="glass-card h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 text-finance-teal animate-spin" />
+          <p>Generating recommendations...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="glass-card h-full">
       <div className="p-6">
@@ -34,69 +183,23 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
         </div>
         
         <div className="space-y-4">
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
-            <div className="flex gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-100 text-red-600 flex-shrink-0">
-                <Trash className="h-5 w-5" />
-              </div>
-              
-              <div>
-                <h3 className="font-medium">Cancel unused subscriptions</h3>
-                <p className="text-sm text-muted-foreground">We found 2 subscriptions you haven't used in 3+ months</p>
-                <div className="mt-2">
-                  <span className="text-finance-success font-medium">Save ₹650/month</span>
+          {recommendations.map((recommendation, index) => (
+            <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
+              <div className="flex gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-finance-teal/10 text-finance-teal flex-shrink-0">
+                  {getIconComponent(recommendation.icon)}
+                </div>
+                
+                <div>
+                  <h3 className="font-medium">{recommendation.title}</h3>
+                  <p className="text-sm text-muted-foreground">{recommendation.description}</p>
+                  <div className="mt-2">
+                    <span className="text-finance-success font-medium">{recommendation.savings}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
-            <div className="flex gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-600 flex-shrink-0">
-                <Repeat className="h-5 w-5" />
-              </div>
-              
-              <div>
-                <h3 className="font-medium">Switch utility provider</h3>
-                <p className="text-sm text-muted-foreground">Based on your usage patterns, a different plan could be cheaper</p>
-                <div className="mt-2">
-                  <span className="text-finance-success font-medium">Save ₹1,200/year</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
-            <div className="flex gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-100 text-amber-600 flex-shrink-0">
-                <CreditCard className="h-5 w-5" />
-              </div>
-              
-              <div>
-                <h3 className="font-medium">Consider a different credit card</h3>
-                <p className="text-sm text-muted-foreground">Your spending would earn more rewards with this card</p>
-                <div className="mt-2">
-                  <span className="text-finance-success font-medium">Earn ₹3,500 more in rewards</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
-            <div className="flex gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-100 text-green-600 flex-shrink-0">
-                <Calendar className="h-5 w-5" />
-              </div>
-              
-              <div>
-                <h3 className="font-medium">Set up automatic bill payments</h3>
-                <p className="text-sm text-muted-foreground">You've paid ₹450 in late fees this year</p>
-                <div className="mt-2">
-                  <span className="text-finance-success font-medium">Avoid late fees in the future</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
         
         <Button 
