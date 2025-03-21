@@ -53,12 +53,14 @@ export const ExpensesStep = ({
                 placeholder="Expense name" 
                 value={expense.name}
                 onChange={(e) => onUpdateExpense(expense.id, "name", e.target.value)}
+                type="text"
               />
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
                 <Input 
                   id={`expense-amount-${expense.id}`} 
-                  type="number" 
+                  type="text"
+                  inputMode="numeric"
                   placeholder="0.00" 
                   className="pl-7"
                   value={expense.amount}
@@ -75,6 +77,99 @@ export const ExpensesStep = ({
           onClick={onAddExpense}
         >
           + Add another expense
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export const SavingsGoalsStep = ({ 
+  goals, 
+  onUpdateGoal, 
+  onAddGoal, 
+  onRemoveGoal 
+}) => {
+  const calculateMonths = (target, monthly) => {
+    if (!target || !monthly || monthly <= 0) return "N/A";
+    const months = Math.ceil(parseFloat(target) / parseFloat(monthly));
+    return `${months} months`;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-finance-teal/20 mb-4">
+          <PiggyBank className="h-6 w-6 text-finance-teal" />
+        </div>
+        <h1 className="text-2xl font-bold mb-2">Set your savings goals</h1>
+        <p className="text-muted-foreground">
+          What are you saving for? Let's define some specific goals to track your progress.
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        {goals.map((goal) => (
+          <div key={goal.id} className="grid gap-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`goal-name-${goal.id}`}>Goal Name</Label>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6" 
+                onClick={() => onRemoveGoal(goal.id)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input 
+                id={`goal-name-${goal.id}`} 
+                placeholder="Goal name" 
+                value={goal.name}
+                onChange={(e) => onUpdateGoal(goal.id, "name", e.target.value)}
+                type="text"
+              />
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
+                <Input 
+                  id={`goal-target-${goal.id}`} 
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Target amount" 
+                  className="pl-7"
+                  value={goal.target}
+                  onChange={(e) => onUpdateGoal(goal.id, "target", e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
+                <Input 
+                  id={`goal-monthly-${goal.id}`} 
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Monthly contribution" 
+                  className="pl-7"
+                  value={goal.monthly}
+                  onChange={(e) => onUpdateGoal(goal.id, "monthly", e.target.value)}
+                />
+              </div>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded px-3 py-2 text-sm flex items-center">
+                <span className="text-muted-foreground">
+                  Estimated: {calculateMonths(goal.target, goal.monthly)}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        <Button 
+          variant="outline" 
+          className="text-finance-teal border-dashed border-finance-teal/50 hover:bg-finance-teal/10"
+          onClick={onAddGoal}
+        >
+          + Add another goal
         </Button>
       </div>
     </div>
@@ -130,96 +225,6 @@ export const BankLinkStep = () => {
           })}
         >
           Skip for now
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-export const SavingsGoalsStep = ({ 
-  goals, 
-  onUpdateGoal, 
-  onAddGoal, 
-  onRemoveGoal 
-}) => {
-  const calculateMonths = (target, monthly) => {
-    if (!target || !monthly || monthly <= 0) return "N/A";
-    const months = Math.ceil(parseFloat(target) / parseFloat(monthly));
-    return `${months} months`;
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-finance-teal/20 mb-4">
-          <PiggyBank className="h-6 w-6 text-finance-teal" />
-        </div>
-        <h1 className="text-2xl font-bold mb-2">Set your savings goals</h1>
-        <p className="text-muted-foreground">
-          What are you saving for? Let's define some specific goals to track your progress.
-        </p>
-      </div>
-      
-      <div className="space-y-4">
-        {goals.map((goal) => (
-          <div key={goal.id} className="grid gap-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor={`goal-name-${goal.id}`}>Goal Name</Label>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-6 w-6" 
-                onClick={() => onRemoveGoal(goal.id)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Input 
-                id={`goal-name-${goal.id}`} 
-                placeholder="Goal name" 
-                value={goal.name}
-                onChange={(e) => onUpdateGoal(goal.id, "name", e.target.value)}
-              />
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
-                <Input 
-                  id={`goal-target-${goal.id}`} 
-                  type="number" 
-                  placeholder="Target amount" 
-                  className="pl-7"
-                  value={goal.target}
-                  onChange={(e) => onUpdateGoal(goal.id, "target", e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</div>
-                <Input 
-                  id={`goal-monthly-${goal.id}`} 
-                  type="number" 
-                  placeholder="Monthly contribution" 
-                  className="pl-7"
-                  value={goal.monthly}
-                  onChange={(e) => onUpdateGoal(goal.id, "monthly", e.target.value)}
-                />
-              </div>
-              <div className="bg-gray-100 dark:bg-gray-800 rounded px-3 py-2 text-sm flex items-center">
-                <span className="text-muted-foreground">
-                  Estimated: {calculateMonths(goal.target, goal.monthly)}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-        
-        <Button 
-          variant="outline" 
-          className="text-finance-teal border-dashed border-finance-teal/50 hover:bg-finance-teal/10"
-          onClick={onAddGoal}
-        >
-          + Add another goal
         </Button>
       </div>
     </div>

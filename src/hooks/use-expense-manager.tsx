@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,19 +19,18 @@ interface GoalItem {
 
 export function useExpenseManager() {
   const { user } = useAuth();
-  const [expenses, setExpenses] = useState<ExpenseItem[]>([
-    { id: '1', name: 'Rent', amount: '' }
-  ]);
-  
-  const [goals, setGoals] = useState<GoalItem[]>([
-    { id: '1', name: 'Emergency Fund', amount: '' }
-  ]);
-  
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [goals, setGoals] = useState<GoalItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchExpensesAndGoals();
+    } else {
+      // Reset to empty for logged-out users
+      setExpenses([]);
+      setGoals([]);
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -56,24 +56,29 @@ export function useExpenseManager() {
         throw goalsError;
       }
       
-      const transformedGoals = goalsData.map(goal => ({
-        id: goal.id,
-        name: goal.name,
-        amount: goal.target_amount.toString()
-      }));
-      
-      const transformedExpenses = expensesData.map(expense => ({
-        id: expense.id,
-        name: expense.name,
-        amount: expense.amount.toString()
-      }));
-      
-      if (transformedExpenses.length > 0) {
-        setExpenses(transformedExpenses);
+      // Only transform and set data if it exists
+      if (goalsData && goalsData.length > 0) {
+        const transformedGoals = goalsData.map(goal => ({
+          id: goal.id,
+          name: goal.name,
+          amount: goal.target_amount.toString()
+        }));
+        setGoals(transformedGoals);
+      } else {
+        // Set to empty array for new users
+        setGoals([]);
       }
       
-      if (transformedGoals.length > 0) {
-        setGoals(transformedGoals);
+      if (expensesData && expensesData.length > 0) {
+        const transformedExpenses = expensesData.map(expense => ({
+          id: expense.id,
+          name: expense.name,
+          amount: expense.amount.toString()
+        }));
+        setExpenses(transformedExpenses);
+      } else {
+        // Set to empty array for new users
+        setExpenses([]);
       }
       
     } catch (error) {

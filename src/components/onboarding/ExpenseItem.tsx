@@ -37,7 +37,8 @@ const ExpenseItem = ({
         <div className="relative">
           <div className="absolute left-3 top-1/2 -translate-y-1/2">₹</div>
           <Input
-            type="number"
+            type="text" 
+            inputMode="numeric"
             placeholder="0"
             value={amount}
             onChange={(e) => onAmountChange(id, e.target.value)}

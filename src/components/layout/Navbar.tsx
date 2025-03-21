@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,19 @@ export const Navbar = () => {
   }, []);
   
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
+
+  const handleViewAll = () => {
+    navigate("/expenses");
+  };
+
+  const handleViewDetails = () => {
+    navigate("/dashboard");
   };
 
   return (
@@ -119,7 +130,10 @@ export const Navbar = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/expenses" className="cursor-pointer">Expenses</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-500 focus:text-red-500 cursor-pointer" onClick={handleSignOut}>
+                    <DropdownMenuItem 
+                      className="text-red-500 focus:text-red-500 cursor-pointer" 
+                      onClick={handleSignOut}
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign out
                     </DropdownMenuItem>

@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "Welcome back to FinWhisperer!",
       });
       
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       console.error("Sign in error:", error);
     } finally {
@@ -88,7 +88,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "Your account has been created. Please check your email for verification.",
       });
       
-      // Since we need email verification, we don't navigate automatically
+      // Navigate to the onboarding page for new users
+      navigate("/onboarding");
     } catch (error) {
       console.error("Sign up error:", error);
     } finally {
@@ -119,7 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "You have been signed out.",
       });
       
-      navigate("/signin");
+      navigate("/");
     } catch (error) {
       console.error("Sign out error:", error);
     } finally {
