@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
+// Create a client
 const queryClient = new QueryClient();
 
 const App = () => (
