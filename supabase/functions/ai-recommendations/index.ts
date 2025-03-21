@@ -20,15 +20,25 @@ serve(async (req) => {
     
     console.log("Received user data:", userData);
     
+    if (!openAIApiKey) {
+      console.error("Missing OpenAI API key");
+      return new Response(JSON.stringify({ 
+        error: "OpenAI API key is not configured" 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     // Format the prompt with the user's financial data
     const prompt = `
     I have a user with the following financial information:
     
     Expenses:
-    ${userData.expenses.map(exp => `- ${exp.name}: ₹${exp.amount}`).join('\n')}
+    ${userData.expenses?.map(exp => `- ${exp.name}: ₹${exp.amount}`).join('\n') || 'No expense data provided'}
     
     Savings Goals:
-    ${userData.goals.map(goal => `- ${goal.name}: ₹${goal.target}`).join('\n')}
+    ${userData.goals?.map(goal => `- ${goal.name}: ₹${goal.target}`).join('\n') || 'No goals data provided'}
     
     Based on this information, provide the following in JSON format:
     1. Top 3-4 personalized financial recommendations to help them save money
@@ -47,6 +57,8 @@ serve(async (req) => {
     For the icon field, use one of: "Trash", "Repeat", "CreditCard", "Calendar", "ShoppingBag", "Smartphone", "Utensils"
     `;
 
+    console.log("Sending prompt to OpenAI");
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -66,7 +78,8 @@ serve(async (req) => {
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+      console.error("OpenAI API error:", data);
+      throw new Error(`OpenAI API error: ${data.error?.message || JSON.stringify(data)}`);
     }
     
     console.log("OpenAI response received");

@@ -49,9 +49,10 @@ export const useOnboardingSteps = () => {
           description: "Our AI is analyzing your financial data...",
         });
         
-        // Fixed: Properly handle the fetch promise and check if response exists before accessing ok property
         try {
-          const response = await fetch(`${window.location.protocol}//${window.location.host}/api/ai-recommendations`, {
+          console.log("Sending request to AI recommendations:", userData);
+          
+          const response = await fetch(`/api/ai-recommendations`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -59,13 +60,29 @@ export const useOnboardingSteps = () => {
             body: JSON.stringify({ userData }),
           });
           
+          console.log("AI recommendations response status:", response.status);
+          
           // Only proceed if we got a valid response
           if (response && response.ok) {
             const recommendations = await response.json();
+            console.log("AI recommendations received:", recommendations);
             localStorage.setItem('aiRecommendations', JSON.stringify(recommendations));
+            
+            toast({
+              title: "Recommendations ready",
+              description: "Your personalized financial advice is ready to view.",
+            });
+          } else {
+            console.error("Error response from AI recommendations:", await response.text());
+            throw new Error(`API responded with status: ${response.status}`);
           }
         } catch (error) {
           console.error("Error calling AI recommendations:", error);
+          toast({
+            title: "Couldn't generate recommendations",
+            description: "We'll show you default recommendations instead.",
+            variant: "destructive"
+          });
         }
       } catch (error) {
         console.error("Error generating AI recommendations:", error);

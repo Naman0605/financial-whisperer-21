@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, Trash, Repeat, CreditCard, Calendar, ArrowRight, ShoppingBag, Smartphone, Utensils, Loader2 } from "lucide-react";
@@ -105,7 +106,9 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
         goals: goals.map(goal => ({ name: goal.name, target: goal.target_amount }))
       };
       
-      const response = await fetch(`${window.location.origin}/api/ai-recommendations`, {
+      console.log("Sending request to AI recommendations API:", userData);
+      
+      const response = await fetch(`/api/ai-recommendations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,11 +116,15 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
         body: JSON.stringify({ userData }),
       });
       
+      console.log("AI recommendations response status:", response.status);
+      
       if (!response.ok) {
+        console.error("AI recommendations response error:", await response.text());
         throw new Error('Failed to generate recommendations');
       }
       
       const data = await response.json();
+      console.log("AI recommendations data received:", data);
       
       localStorage.setItem('aiRecommendations', JSON.stringify(data));
       
@@ -128,7 +135,7 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
       console.error("Error generating recommendations:", error);
       toast({
         title: "Error",
-        description: "Failed to generate personalized recommendations.",
+        description: "Failed to generate personalized recommendations. Using defaults instead.",
         variant: "destructive"
       });
     } finally {

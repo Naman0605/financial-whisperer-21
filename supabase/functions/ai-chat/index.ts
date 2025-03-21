@@ -21,6 +21,17 @@ serve(async (req) => {
     console.log("Received message:", message);
     console.log("Financial context:", financialContext);
     
+    if (!openAIApiKey) {
+      console.error("Missing OpenAI API key");
+      return new Response(JSON.stringify({ 
+        error: "OpenAI API key is not configured",
+        response: "I'm sorry, I'm not able to process your request right now. Please try again later." 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     // Create a system prompt that includes the user's financial data
     let systemPrompt = "You are a helpful financial assistant that provides personalized advice.";
     
@@ -42,6 +53,8 @@ serve(async (req) => {
     
     systemPrompt += "Provide helpful, personalized financial advice based on this information. Keep responses concise and actionable.";
 
+    console.log("Sending message to OpenAI");
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -61,7 +74,8 @@ serve(async (req) => {
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+      console.error("OpenAI API error:", data);
+      throw new Error(`OpenAI API error: ${data.error?.message || JSON.stringify(data)}`);
     }
     
     const aiResponse = data.choices[0].message.content;
@@ -74,7 +88,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in ai-chat function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      response: "I'm sorry, I encountered an error while processing your request. Please try again later."
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
