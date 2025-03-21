@@ -110,7 +110,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw error;
       }
       
-      navigate("/");
+      // Clear user state after sign out
+      setUser(null);
+      setSession(null);
+      
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out.",
+      });
+      
+      navigate("/signin");
     } catch (error) {
       console.error("Sign out error:", error);
     } finally {

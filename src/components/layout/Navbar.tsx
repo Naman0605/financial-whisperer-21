@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Sparkles, 
   UserRound,
   LogIn,
   Menu,
-  X
+  X,
+  LogOut
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -15,16 +16,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const isLanding = location.pathname === "/";
+  const { user, signOut } = useAuth();
   
-  // Check if user is on signin page to determine logged in state
-  const isLoggedIn = location.pathname !== "/signin";
-
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -33,6 +35,10 @@ export const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+  
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <header
@@ -90,7 +96,7 @@ export const Navbar = () => {
             </>
           ) : (
             <>
-              {isLoggedIn ? (
+              {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 bg-finance-teal/10">
@@ -100,8 +106,8 @@ export const Navbar = () => {
                   <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800">
                     <div className="flex items-center justify-start p-2 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium">Rahul Sharma</p>
-                        <p className="text-sm text-muted-foreground truncate">rahul.sharma@example.com</p>
+                        <p className="font-medium">User Profile</p>
+                        <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                       </div>
                     </div>
                     <DropdownMenuItem asChild>
@@ -113,8 +119,9 @@ export const Navbar = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/expenses" className="cursor-pointer">Expenses</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="text-red-500 focus:text-red-500">
-                      <Link to="/signin" className="cursor-pointer">Sign out</Link>
+                    <DropdownMenuItem className="text-red-500 focus:text-red-500 cursor-pointer" onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -133,7 +140,6 @@ export const Navbar = () => {
             </>
           )}
           
-          {/* Mobile menu button */}
           <Button
             variant="ghost"
             size="icon"
@@ -149,7 +155,6 @@ export const Navbar = () => {
         </div>
       </div>
       
-      {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-900 shadow-lg">
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
@@ -181,7 +186,7 @@ export const Navbar = () => {
             >
               Profile
             </Link>
-            {isLanding && (
+            {!user && isLanding && (
               <Link 
                 to="/signin" 
                 className="text-lg font-medium hover:text-finance-teal transition-colors p-2"
@@ -189,6 +194,19 @@ export const Navbar = () => {
               >
                 Sign In
               </Link>
+            )}
+            {user && (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  handleSignOut();
+                  setMobileMenuOpen(false);
+                }}
+                className="mt-2"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </Button>
             )}
           </div>
         </div>

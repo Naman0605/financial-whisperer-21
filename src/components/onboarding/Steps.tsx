@@ -344,7 +344,16 @@ export const SuccessStep = () => {
   );
 };
 
-export const OnboardingSteps = () => {
+export const OnboardingSteps = ({ 
+  expenses, 
+  onUpdateExpense, 
+  onAddExpense, 
+  onRemoveExpense,
+  goals,
+  onUpdateGoal,
+  onAddGoal,
+  onRemoveGoal 
+}) => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
   
@@ -372,17 +381,38 @@ export const OnboardingSteps = () => {
     StepComponent: () => {
       switch (currentStep) {
         case 1:
-          return <ExpensesStep />;
+          return (
+            <ExpensesStep 
+              expenses={expenses}
+              onUpdateExpense={onUpdateExpense}
+              onAddExpense={onAddExpense}
+              onRemoveExpense={onRemoveExpense}
+            />
+          );
         case 2:
           return <BankLinkStep />;
         case 3:
-          return <SavingsGoalsStep />;
+          return (
+            <SavingsGoalsStep 
+              goals={goals}
+              onUpdateGoal={onUpdateGoal}
+              onAddGoal={onAddGoal}
+              onRemoveGoal={onRemoveGoal}
+            />
+          );
         case 4:
           return <AIAssistantStep />;
         case 5:
           return <SuccessStep />;
         default:
-          return <ExpensesStep />;
+          return (
+            <ExpensesStep 
+              expenses={expenses}
+              onUpdateExpense={onUpdateExpense}
+              onAddExpense={onAddExpense}
+              onRemoveExpense={onRemoveExpense}
+            />
+          );
       }
     }
   };

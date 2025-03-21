@@ -37,9 +37,12 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [filterMonth, setFilterMonth] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -76,8 +79,8 @@ export const Dashboard = () => {
     });
   };
   
-  const handleAddTransaction = () => {
-    if (!transactionAmount || !transactionType) {
+  const handleAddTransaction = async () => {
+    if (!transactionAmount || !transactionType || !user) {
       toast({
         title: "Missing Information",
         description: "Please enter an amount and select a transaction type",
@@ -86,21 +89,39 @@ export const Dashboard = () => {
       return;
     }
 
-    toast({
-      title: `${transactionType} Added`,
-      description: `Added ₹${transactionAmount} to your ${transactionType.toLowerCase()} records`,
-    });
-    setTransactionAmount("");
-    setTransactionType("");
-    setIsAddDialogOpen(false);
+    try {
+      if (transactionType === "Expense") {
+        const { error } = await supabase
+          .from('expenses')
+          .insert({
+            user_id: user.id,
+            name: "New Expense",
+            amount: parseFloat(transactionAmount),
+            category: "General"
+          });
+          
+        if (error) throw error;
+      }
+      
+      toast({
+        title: `${transactionType} Added`,
+        description: `Added ₹${transactionAmount} to your ${transactionType.toLowerCase()} records`,
+      });
+      setTransactionAmount("");
+      setTransactionType("");
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error("Error adding transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add transaction. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewAll = () => {
     navigate("/expenses");
-    toast({
-      title: "Viewing All Transactions",
-      description: "Redirected to expense management page",
-    });
   };
 
   const handleViewDetails = () => {
