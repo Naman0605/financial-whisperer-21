@@ -50,10 +50,13 @@ export const useOnboardingSteps = () => {
   
   // Functions to update the onboarding data
   const updateExpense = (id, field, value) => {
-    setExpenses(expenses.map(exp => 
-      exp.id === id ? { ...exp, [field]: value } : exp
-    ));
+    setExpenses(prevExpenses =>
+      prevExpenses.map(exp =>
+        exp.id === id ? { ...exp, [field]: value } : exp
+      )
+    );
   };
+
   
   const addExpense = () => {
     const newExpense = { id: uuidv4(), name: "", amount: "" };
