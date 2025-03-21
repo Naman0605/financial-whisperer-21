@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,20 +49,23 @@ export const useOnboardingSteps = () => {
           description: "Our AI is analyzing your financial data...",
         });
         
-        const response = await fetch(`${window.location.protocol}//${window.location.host}/api/ai-recommendations`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userData }),
-        }).catch(error => {
+        // Fixed: Properly handle the fetch promise and check if response exists before accessing ok property
+        try {
+          const response = await fetch(`${window.location.protocol}//${window.location.host}/api/ai-recommendations`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userData }),
+          });
+          
+          // Only proceed if we got a valid response
+          if (response && response.ok) {
+            const recommendations = await response.json();
+            localStorage.setItem('aiRecommendations', JSON.stringify(recommendations));
+          }
+        } catch (error) {
           console.error("Error calling AI recommendations:", error);
-        });
-
-        // Store the recommendations if the API call was successful
-        if (response?.ok) {
-          const recommendations = await response.json();
-          localStorage.setItem('aiRecommendations', JSON.stringify(recommendations));
         }
       } catch (error) {
         console.error("Error generating AI recommendations:", error);
