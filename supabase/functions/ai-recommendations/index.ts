@@ -23,9 +23,21 @@ serve(async (req) => {
     if (!openAIApiKey) {
       console.error("Missing OpenAI API key");
       return new Response(JSON.stringify({ 
-        error: "OpenAI API key is not configured" 
+        error: "OpenAI API key is not configured",
+        recommendations: []
       }), {
         status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (!userData || (!userData.expenses?.length && !userData.goals?.length)) {
+      console.log("No user data provided or empty data");
+      return new Response(JSON.stringify({
+        recommendations: [],
+        analysis: "We need more information about your financial situation to provide personalized recommendations.",
+        savingsStrategy: "Start by adding your expenses and savings goals."
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -75,13 +87,13 @@ serve(async (req) => {
       }),
     });
 
-    const data = await response.json();
-    
     if (!response.ok) {
-      console.error("OpenAI API error:", data);
-      throw new Error(`OpenAI API error: ${data.error?.message || JSON.stringify(data)}`);
+      const errorData = await response.text();
+      console.error("OpenAI API error:", errorData);
+      throw new Error(`OpenAI API error: ${errorData}`);
     }
     
+    const data = await response.json();
     console.log("OpenAI response received");
     
     const aiResponse = data.choices[0].message.content;
@@ -96,6 +108,12 @@ serve(async (req) => {
       } else {
         throw new Error("No JSON found in response");
       }
+      
+      // Validate the response structure
+      if (!parsedResponse.recommendations || !Array.isArray(parsedResponse.recommendations)) {
+        throw new Error("Invalid response structure: missing recommendations array");
+      }
+      
     } catch (parseError) {
       console.error("Failed to parse AI response as JSON:", parseError);
       console.log("Raw AI response:", aiResponse);
@@ -108,6 +126,18 @@ serve(async (req) => {
             description: "Based on your expenses, we recommend reviewing your monthly budget.",
             savings: "Varies",
             icon: "CreditCard"
+          },
+          {
+            title: "Track Your Spending",
+            description: "Start tracking all your expenses to identify areas where you can cut back.",
+            savings: "5-15% of monthly expenses",
+            icon: "Calendar"
+          },
+          {
+            title: "Set Up Automated Savings",
+            description: "Automate transfers to your savings account to make progress toward your goals.",
+            savings: "Consistent progress",
+            icon: "Repeat"
           }
         ],
         analysis: "We couldn't analyze your spending patterns in detail. Please provide more information.",
@@ -120,8 +150,27 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in ai-recommendations function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    // Return a more structured error response with default recommendations
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      recommendations: [
+        { 
+          title: "Create a Budget", 
+          description: "Track your income and expenses to understand your spending patterns.",
+          savings: "Potential 10-15% savings",
+          icon: "CreditCard"
+        },
+        {
+          title: "Emergency Fund", 
+          description: "Start building an emergency fund for unexpected expenses.",
+          savings: "Financial security",
+          icon: "ShoppingBag"
+        }
+      ],
+      analysis: "We encountered an error while analyzing your financial data.",
+      savingsStrategy: "Focus on creating a budget and reducing unnecessary expenses."
+    }), {
+      status: 200, // Return 200 with fallback data instead of 500
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

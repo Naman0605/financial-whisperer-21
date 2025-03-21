@@ -27,7 +27,15 @@ serve(async (req) => {
         error: "OpenAI API key is not configured",
         response: "I'm sorry, I'm not able to process your request right now. Please try again later." 
       }), {
-        status: 500,
+        status: 200, // Return 200 with fallback message instead of 500
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (!message || message.trim() === '') {
+      return new Response(JSON.stringify({ 
+        response: "Please provide a message to get financial advice." 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -71,13 +79,13 @@ serve(async (req) => {
       }),
     });
 
-    const data = await response.json();
-    
     if (!response.ok) {
-      console.error("OpenAI API error:", data);
-      throw new Error(`OpenAI API error: ${data.error?.message || JSON.stringify(data)}`);
+      const errorText = await response.text();
+      console.error("OpenAI API error:", errorText);
+      throw new Error(`OpenAI API error: Status ${response.status} - ${errorText}`);
     }
     
+    const data = await response.json();
     const aiResponse = data.choices[0].message.content;
     
     return new Response(JSON.stringify({ 
@@ -92,7 +100,7 @@ serve(async (req) => {
       error: error.message,
       response: "I'm sorry, I encountered an error while processing your request. Please try again later."
     }), {
-      status: 500,
+      status: 200, // Return 200 with error message instead of 500
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

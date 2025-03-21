@@ -52,7 +52,7 @@ export const useOnboardingSteps = () => {
         try {
           console.log("Sending request to AI recommendations:", userData);
           
-          const response = await fetch(`/api/ai-recommendations`, {
+          const response = await fetch('/api/ai-recommendations', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -64,17 +64,33 @@ export const useOnboardingSteps = () => {
           
           // Only proceed if we got a valid response
           if (response && response.ok) {
-            const recommendations = await response.json();
-            console.log("AI recommendations received:", recommendations);
-            localStorage.setItem('aiRecommendations', JSON.stringify(recommendations));
+            const data = await response.json();
+            console.log("AI recommendations received:", data);
             
-            toast({
-              title: "Recommendations ready",
-              description: "Your personalized financial advice is ready to view.",
-            });
+            if (data.error) {
+              console.warn("API returned an error but with data:", data.error);
+              toast({
+                title: "Warning",
+                description: data.error,
+                variant: "destructive"
+              });
+            }
+            
+            // Only store if we have valid recommendations
+            if (data.recommendations && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
+              localStorage.setItem('aiRecommendations', JSON.stringify(data));
+              
+              toast({
+                title: "Recommendations ready",
+                description: "Your personalized financial advice is ready to view.",
+              });
+            } else {
+              throw new Error("Invalid response format from API");
+            }
           } else {
-            console.error("Error response from AI recommendations:", await response.text());
-            throw new Error(`API responded with status: ${response.status}`);
+            const errorText = await response.text();
+            console.error("Error response from AI recommendations:", errorText);
+            throw new Error(`API responded with status: ${response.status} - ${errorText}`);
           }
         } catch (error) {
           console.error("Error calling AI recommendations:", error);
