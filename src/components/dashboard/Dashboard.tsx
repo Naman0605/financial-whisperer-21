@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MonthlySnapshot from "./MonthlySnapshot";
@@ -17,7 +16,7 @@ import {
   Wallet,
   LineChart,
   BarChart,
-  PieChartIcon
+  PieChart as PieChartIcon
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -58,17 +57,20 @@ export const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [recentTransactions, setRecentTransactions] = useState([]);
   
-  // Fetch data on component mount
   useEffect(() => {
     if (user) {
       fetchUserData();
+    } else {
+      setHasExpenses(false);
+      setHasGoals(false);
+      setRecentTransactions([]);
+      setIsLoading(false);
     }
   }, [user]);
 
   const fetchUserData = async () => {
     setIsLoading(true);
     try {
-      // Check if user has any expenses
       const { data: expenses, error: expensesError } = await supabase
         .from('expenses')
         .select('id')
@@ -78,7 +80,6 @@ export const Dashboard = () => {
       if (expensesError) throw expensesError;
       setHasExpenses(expenses && expenses.length > 0);
 
-      // Check if user has any goals
       const { data: goals, error: goalsError } = await supabase
         .from('goals')
         .select('id')
@@ -88,17 +89,18 @@ export const Dashboard = () => {
       if (goalsError) throw goalsError;
       setHasGoals(goals && goals.length > 0);
 
-      // Fetch recent transactions for the transaction list
       if (expenses && expenses.length > 0) {
         const { data: transactions, error: transactionsError } = await supabase
           .from('expenses')
           .select('*')
           .eq('user_id', user.id)
-          .order('date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(5);
         
         if (transactionsError) throw transactionsError;
         setRecentTransactions(transactions || []);
+      } else {
+        setRecentTransactions([]);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -160,7 +162,8 @@ export const Dashboard = () => {
             user_id: user.id,
             name: "New Expense",
             amount: parseFloat(transactionAmount),
-            category: "General"
+            category: "General",
+            date: new Date().toISOString().split('T')[0]
           });
           
         if (error) throw error;
@@ -174,7 +177,6 @@ export const Dashboard = () => {
       setTransactionType("");
       setIsAddDialogOpen(false);
       
-      // Refresh data after adding a transaction
       fetchUserData();
     } catch (error) {
       console.error("Error adding transaction:", error);
@@ -212,7 +214,6 @@ export const Dashboard = () => {
     );
   }
 
-  // If there's no data, show the empty state
   if (!hasExpenses && !hasGoals) {
     return (
       <div className="w-full max-w-7xl mx-auto px-4 py-8 animate-fade-in">
@@ -546,7 +547,6 @@ export const Dashboard = () => {
   );
 };
 
-// Helper function to get category icon
 const getCategoryIcon = (category) => {
   switch (category?.toLowerCase()) {
     case 'food':
@@ -567,6 +567,8 @@ const getCategoryIcon = (category) => {
       return '💼';
     case 'investment':
       return '📈';
+    case 'onboarding':
+      return '📋';
     default:
       return '💳';
   }

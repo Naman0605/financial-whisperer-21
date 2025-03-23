@@ -16,6 +16,19 @@ serve(async (req) => {
   }
 
   try {
+    // Make sure authorization header is present
+    const authorization = req.headers.get('authorization');
+    if (!authorization) {
+      console.error("Missing authorization header");
+      return new Response(JSON.stringify({ 
+        error: "Missing authorization header",
+        recommendations: []
+      }), {
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { userData } = await req.json();
     
     console.log("Received user data:", userData);

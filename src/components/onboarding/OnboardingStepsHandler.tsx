@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,13 +52,25 @@ export const useOnboardingSteps = () => {
             title: "Generating recommendations",
             description: "Our AI is analyzing your financial data...",
           });
+
+          // Get the current session for the auth token
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData.session?.access_token;
+          
+          if (!token) {
+            console.error("No authentication token available");
+            throw new Error("Authentication required");
+          }
           
           try {
             console.log("Sending request to AI recommendations:", userData);
             
-            // Use Supabase's function invoke method instead of direct fetch
+            // Use Supabase's function invoke method with auth token
             const { data, error } = await supabase.functions.invoke('ai-recommendations', {
-              body: { userData }
+              body: { userData },
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
             });
             
             if (error) {
@@ -170,7 +183,8 @@ export const useOnboardingSteps = () => {
           user_id: user.id,
           name: exp.name,
           amount: parseFloat(exp.amount) || 0,
-          category: 'Onboarding' // Default category for onboarding expenses
+          category: 'Onboarding', // Default category for onboarding expenses
+          date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
         }));
       
       if (expensesToSave.length === 0) return;

@@ -75,7 +75,7 @@ export const SpendingBreakdown = () => {
 
         setSpendingData(formattedData);
         
-        // Generate some trend data (simplified for now)
+        // Generate some trend data based on actual user data
         // In a real app, you'd fetch historical data
         const months = ["Jan", "Feb", "Mar", "Apr"];
         const trendCategories = Array.from(categoryMap.keys()).slice(0, 5);
@@ -150,7 +150,7 @@ export const SpendingBreakdown = () => {
             <CardTitle>Spending Breakdown</CardTitle>
             <CardDescription>Current Period</CardDescription>
           </div>
-          {spendingData.length > 0 && spendingData[0].value > spendingData[1]?.value * 1.5 && (
+          {spendingData.length > 0 && spendingData[0].value > (spendingData[1]?.value || 0) * 1.5 && (
             <Badge variant="outline" className="flex items-center gap-1 border-finance-warning text-finance-warning">
               <AlertCircle className="h-3 w-3" />
               <span>You spend {Math.round(spendingData[0].value / (spendingData[1]?.value || 1))}x more on {spendingData[0].name}</span>
