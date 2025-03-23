@@ -33,7 +33,7 @@ export const SpendingBreakdown = () => {
         const { data: expenses, error } = await supabase
           .from('expenses')
           .select('name, amount, category')
-          .eq('user_id', user.id);
+          .eq('user_id', String(user.id));
 
         if (error) throw error;
 
