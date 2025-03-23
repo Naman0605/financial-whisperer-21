@@ -16,7 +16,8 @@ import {
   CreditCard,
   Wallet,
   LineChart,
-  BarChart
+  BarChart,
+  PieChartIcon
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -271,7 +272,7 @@ export const Dashboard = () => {
                 description="Add your spending data to see your breakdown by category."
                 actionLabel="Add Expenses"
                 onAction={handleAddData}
-                icon={<PieChart className="h-8 w-8 text-muted-foreground" />}
+                icon={<PieChartIcon className="h-8 w-8 text-muted-foreground" />}
               />
             </div>
           )}
