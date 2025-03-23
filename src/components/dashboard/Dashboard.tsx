@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MonthlySnapshot from "./MonthlySnapshot";
 import SpendingBreakdown from "./SpendingBreakdown";
@@ -6,13 +7,16 @@ import AIRecommendations from "./AIRecommendations";
 import AIChatWidget from "./AIChatWidget";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import EmptyDataState from "@/components/expenses/EmptyDataState";
 import { 
   PlusCircle, 
   Filter, 
   ChevronDown,
   SlidersHorizontal,
   CreditCard,
-  Wallet
+  Wallet,
+  LineChart,
+  BarChart
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -48,6 +52,64 @@ export const Dashboard = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [transactionAmount, setTransactionAmount] = useState("");
   const [transactionType, setTransactionType] = useState("");
+  const [hasExpenses, setHasExpenses] = useState(false);
+  const [hasGoals, setHasGoals] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  
+  // Fetch data on component mount
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
+  const fetchUserData = async () => {
+    setIsLoading(true);
+    try {
+      // Check if user has any expenses
+      const { data: expenses, error: expensesError } = await supabase
+        .from('expenses')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (expensesError) throw expensesError;
+      setHasExpenses(expenses && expenses.length > 0);
+
+      // Check if user has any goals
+      const { data: goals, error: goalsError } = await supabase
+        .from('goals')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (goalsError) throw goalsError;
+      setHasGoals(goals && goals.length > 0);
+
+      // Fetch recent transactions for the transaction list
+      if (expenses && expenses.length > 0) {
+        const { data: transactions, error: transactionsError } = await supabase
+          .from('expenses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('date', { ascending: false })
+          .limit(5);
+        
+        if (transactionsError) throw transactionsError;
+        setRecentTransactions(transactions || []);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load your data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const months = [
     { value: "all", label: "All Time" },
@@ -110,6 +172,9 @@ export const Dashboard = () => {
       setTransactionAmount("");
       setTransactionType("");
       setIsAddDialogOpen(false);
+      
+      // Refresh data after adding a transaction
+      fetchUserData();
     } catch (error) {
       console.error("Error adding transaction:", error);
       toast({
@@ -132,6 +197,46 @@ export const Dashboard = () => {
     });
   };
 
+  const handleAddData = () => {
+    navigate("/expenses");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4 py-8 animate-fade-in">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-finance-teal"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // If there's no data, show the empty state
+  if (!hasExpenses && !hasGoals) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4 py-8 animate-fade-in">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Financial Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome! Let's get started with tracking your finances.
+          </p>
+        </div>
+        
+        <EmptyDataState 
+          title="No financial data yet"
+          description="Start by adding your expenses and savings goals to get personalized insights and recommendations."
+          actionLabel="Add Your Financial Data"
+          onAction={handleAddData}
+          icon={<LineChart className="h-8 w-8 text-muted-foreground" />}
+        />
+        
+        <div className="glass-card mt-8">
+          <AIChatWidget />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 animate-fade-in">
       <div className="mb-8">
@@ -142,9 +247,34 @@ export const Dashboard = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <MonthlySnapshot />
+        {hasExpenses ? (
+          <MonthlySnapshot />
+        ) : (
+          <div className="glass-card h-full flex items-center justify-center">
+            <EmptyDataState 
+              title="No expense data"
+              description="Add your expenses to see a monthly snapshot."
+              actionLabel="Add Expenses"
+              onAction={handleAddData}
+              icon={<BarChart className="h-8 w-8 text-muted-foreground" />}
+            />
+          </div>
+        )}
+        
         <div className="lg:col-span-2">
-          <SpendingBreakdown />
+          {hasExpenses ? (
+            <SpendingBreakdown />
+          ) : (
+            <div className="glass-card h-full flex items-center justify-center">
+              <EmptyDataState 
+                title="No spending data"
+                description="Add your spending data to see your breakdown by category."
+                actionLabel="Add Expenses"
+                onAction={handleAddData}
+                icon={<PieChart className="h-8 w-8 text-muted-foreground" />}
+              />
+            </div>
+          )}
         </div>
       </div>
       
@@ -273,107 +403,132 @@ export const Dashboard = () => {
                 </div>
               </div>
               
-              <Tabs defaultValue="all">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="income">Income</TabsTrigger>
-                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="all" className="m-0">
-                  <div className="space-y-2">
-                    {[
-                      { name: "Salary Deposit", amount: "+₹3,500.00", date: "Today", category: "Income", icon: "💼" },
-                      { name: "Grocery Store", amount: "-₹86.42", date: "Yesterday", category: "Food", icon: "🛒" },
-                      { name: "Electric Bill", amount: "-₹94.20", date: "Jan 15", category: "Utilities", icon: "⚡" },
-                      { name: "Coffee Shop", amount: "-₹4.75", date: "Jan 14", category: "Dining", icon: "☕" },
-                      { name: "Online Store", amount: "-₹59.99", date: "Jan 12", category: "Shopping", icon: "🛍️" }
-                    ].map((transaction, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
-                            {transaction.icon}
+              {hasExpenses && recentTransactions.length > 0 ? (
+                <Tabs defaultValue="all">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="income">Income</TabsTrigger>
+                    <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="all" className="m-0">
+                    <div className="space-y-2">
+                      {recentTransactions.map((transaction, index) => {
+                        const icon = getCategoryIcon(transaction.category);
+                        const formattedAmount = transaction.amount > 0 
+                          ? `+₹${transaction.amount.toFixed(2)}` 
+                          : `-₹${Math.abs(transaction.amount).toFixed(2)}`;
+                        const date = new Date(transaction.date).toLocaleDateString();
+                        
+                        return (
+                          <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
+                                {icon}
+                              </div>
+                              <div>
+                                <p className="font-medium">{transaction.name}</p>
+                                <p className="text-xs text-muted-foreground">{date} • {transaction.category || 'General'}</p>
+                              </div>
+                            </div>
+                            <span className={transaction.amount > 0 ? "text-finance-success font-medium" : "text-finance-danger font-medium"}>
+                              {formattedAmount}
+                            </span>
                           </div>
-                          <div>
-                            <p className="font-medium">{transaction.name}</p>
-                            <p className="text-xs text-muted-foreground">{transaction.date} • {transaction.category}</p>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 text-center">
+                      <Button variant="outline" size="sm" className="w-full" onClick={handleViewAll}>
+                        View All Transactions
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="income" className="m-0">
+                    <div className="space-y-2">
+                      {recentTransactions.filter(t => t.amount > 0).map((transaction, index) => {
+                        const icon = getCategoryIcon(transaction.category);
+                        const formattedAmount = `+₹${transaction.amount.toFixed(2)}`;
+                        const date = new Date(transaction.date).toLocaleDateString();
+                        
+                        return (
+                          <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
+                                {icon}
+                              </div>
+                              <div>
+                                <p className="font-medium">{transaction.name}</p>
+                                <p className="text-xs text-muted-foreground">{date} • {transaction.category || 'Income'}</p>
+                              </div>
+                            </div>
+                            <span className="text-finance-success font-medium">
+                              {formattedAmount}
+                            </span>
                           </div>
-                        </div>
-                        <span className={transaction.amount.startsWith("+") ? "text-finance-success font-medium" : "text-finance-danger font-medium"}>
-                          {transaction.amount}
-                        </span>
+                        );
+                      })}
+                    </div>
+                    {recentTransactions.filter(t => t.amount > 0).length > 0 ? (
+                      <div className="mt-4 text-center">
+                        <Button variant="outline" size="sm" className="w-full" onClick={handleViewAll}>
+                          View All Income
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 text-center">
-                    <Button variant="outline" size="sm" className="w-full" onClick={handleViewAll}>
-                      View All Transactions
-                    </Button>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="income" className="m-0">
-                  <div className="space-y-2">
-                    {[
-                      { name: "Salary Deposit", amount: "+₹3,500.00", date: "Today", category: "Income", icon: "💼" },
-                      { name: "Freelance Payment", amount: "+₹850.00", date: "Jan 10", category: "Income", icon: "💻" },
-                      { name: "Dividend", amount: "+₹32.50", date: "Jan 5", category: "Investment", icon: "📈" }
-                    ].map((transaction, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
-                            {transaction.icon}
-                          </div>
-                          <div>
-                            <p className="font-medium">{transaction.name}</p>
-                            <p className="text-xs text-muted-foreground">{transaction.date} • {transaction.category}</p>
-                          </div>
-                        </div>
-                        <span className="text-finance-success font-medium">
-                          {transaction.amount}
-                        </span>
+                    ) : (
+                      <div className="py-8 text-center">
+                        <p className="text-muted-foreground">No income transactions found</p>
                       </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 text-center">
-                    <Button variant="outline" size="sm" className="w-full" onClick={handleViewAll}>
-                      View All Income
-                    </Button>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="expenses" className="m-0">
-                  <div className="space-y-2">
-                    {[
-                      { name: "Grocery Store", amount: "-₹86.42", date: "Yesterday", category: "Food", icon: "🛒" },
-                      { name: "Electric Bill", amount: "-₹94.20", date: "Jan 15", category: "Utilities", icon: "⚡" },
-                      { name: "Coffee Shop", amount: "-₹4.75", date: "Jan 14", category: "Dining", icon: "☕" },
-                      { name: "Online Store", amount: "-₹59.99", date: "Jan 12", category: "Shopping", icon: "🛍️" },
-                      { name: "Gas Station", amount: "-₹45.33", date: "Jan 10", category: "Transportation", icon: "⛽" }
-                    ].map((transaction, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
-                            {transaction.icon}
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="expenses" className="m-0">
+                    <div className="space-y-2">
+                      {recentTransactions.filter(t => t.amount < 0).map((transaction, index) => {
+                        const icon = getCategoryIcon(transaction.category);
+                        const formattedAmount = `-₹${Math.abs(transaction.amount).toFixed(2)}`;
+                        const date = new Date(transaction.date).toLocaleDateString();
+                        
+                        return (
+                          <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
+                                {icon}
+                              </div>
+                              <div>
+                                <p className="font-medium">{transaction.name}</p>
+                                <p className="text-xs text-muted-foreground">{date} • {transaction.category || 'Expense'}</p>
+                              </div>
+                            </div>
+                            <span className="text-finance-danger font-medium">
+                              {formattedAmount}
+                            </span>
                           </div>
-                          <div>
-                            <p className="font-medium">{transaction.name}</p>
-                            <p className="text-xs text-muted-foreground">{transaction.date} • {transaction.category}</p>
-                          </div>
-                        </div>
-                        <span className="text-finance-danger font-medium">
-                          {transaction.amount}
-                        </span>
+                        );
+                      })}
+                    </div>
+                    {recentTransactions.filter(t => t.amount < 0).length > 0 ? (
+                      <div className="mt-4 text-center">
+                        <Button variant="outline" size="sm" className="w-full" onClick={handleViewAll}>
+                          View All Expenses
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 text-center">
-                    <Button variant="outline" size="sm" className="w-full" onClick={handleViewAll}>
-                      View All Expenses
-                    </Button>
-                  </div>
-                </TabsContent>
-              </Tabs>
+                    ) : (
+                      <div className="py-8 text-center">
+                        <p className="text-muted-foreground">No expense transactions found</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <EmptyDataState 
+                  title="No transactions yet"
+                  description="Add your first transaction to start tracking your finances."
+                  actionLabel="Add Transaction"
+                  onAction={() => setIsAddDialogOpen(true)}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -388,6 +543,32 @@ export const Dashboard = () => {
       </div>
     </div>
   );
+};
+
+// Helper function to get category icon
+const getCategoryIcon = (category) => {
+  switch (category?.toLowerCase()) {
+    case 'food':
+    case 'grocery':
+    case 'groceries':
+      return '🛒';
+    case 'utilities':
+      return '⚡';
+    case 'dining':
+    case 'restaurant':
+      return '☕';
+    case 'shopping':
+      return '🛍️';
+    case 'transportation':
+      return '⛽';
+    case 'income':
+    case 'salary':
+      return '💼';
+    case 'investment':
+      return '📈';
+    default:
+      return '💳';
+  }
 };
 
 export default Dashboard;
