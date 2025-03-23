@@ -3,11 +3,13 @@ import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Hero = () => {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const subheadingRef = useRef<HTMLParagraphElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
   
   useEffect(() => {
     const elements = [
@@ -28,11 +30,11 @@ export const Hero = () => {
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-finance-teal/10 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-finance-teal/10 via-transparent to-transparent dark:from-finance-teal/5" />
       
       {/* Animated circles */}
-      <div className="absolute -top-40 -left-40 w-80 h-80 bg-finance-teal/20 rounded-full blur-3xl animate-pulse-gentle" />
-      <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-finance-gold/20 rounded-full blur-3xl animate-pulse-gentle" style={{ animationDelay: "1s" }} />
+      <div className="absolute -top-40 -left-40 w-80 h-80 bg-finance-teal/20 dark:bg-finance-teal/10 rounded-full blur-3xl animate-pulse-gentle" />
+      <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-finance-gold/20 dark:bg-finance-gold/10 rounded-full blur-3xl animate-pulse-gentle" style={{ animationDelay: "1s" }} />
       
       <div className="max-w-4xl mx-auto text-center relative z-10 pt-16">
         <div className="inline-flex items-center px-3 py-1 rounded-full bg-finance-teal/10 text-finance-teal text-sm font-medium mb-6 animate-fade-in">
@@ -58,27 +60,42 @@ export const Hero = () => {
           ref={ctaRef}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 opacity-0 translate-y-4 transition-all duration-700 ease-out delay-500"
         >
-          <Button 
-            asChild
-            size="lg" 
-            className="bg-finance-teal hover:bg-finance-teal/90 text-white rounded-full font-medium px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 group"
-          >
-            <Link to="/onboarding">
-              Get Started for Free
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-            </Link>
-          </Button>
-          
-          <Button 
-            asChild
-            variant="outline" 
-            size="lg" 
-            className="border-finance-teal/50 text-finance-teal hover:bg-finance-teal/10 rounded-full px-8 py-6"
-          >
-            <a href="#features">
-              See how it works
-            </a>
-          </Button>
+          {user ? (
+            <Button 
+              asChild
+              size="lg" 
+              className="bg-finance-teal hover:bg-finance-teal/90 text-white rounded-full font-medium px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 group"
+            >
+              <Link to="/dashboard">
+                Go to Dashboard
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <Button 
+                asChild
+                size="lg" 
+                className="bg-finance-teal hover:bg-finance-teal/90 text-white rounded-full font-medium px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300 group"
+              >
+                <Link to="/signup">
+                  Get Started for Free
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </Button>
+              
+              <Button 
+                asChild
+                variant="outline" 
+                size="lg" 
+                className="border-finance-teal/50 text-finance-teal hover:bg-finance-teal/10 rounded-full px-8 py-6"
+              >
+                <a href="#features">
+                  See how it works
+                </a>
+              </Button>
+            </>
+          )}
         </div>
       </div>
       

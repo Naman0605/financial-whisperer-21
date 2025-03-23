@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -74,81 +76,77 @@ export const Navbar = () => {
           >
             Home
           </Link>
-          <Link 
-            to="/dashboard" 
-            className="text-sm font-medium hover:text-finance-teal transition-colors"
-          >
-            Dashboard
-          </Link>
-          <Link 
-            to="/expenses" 
-            className="text-sm font-medium hover:text-finance-teal transition-colors"
-          >
-            Expenses
-          </Link>
+          {user && (
+            <>
+              <Link 
+                to="/dashboard" 
+                className="text-sm font-medium hover:text-finance-teal transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link 
+                to="/expenses" 
+                className="text-sm font-medium hover:text-finance-teal transition-colors"
+              >
+                Expenses
+              </Link>
+            </>
+          )}
         </nav>
 
         <div className="flex items-center gap-3">
-          {isLanding ? (
+          <ThemeToggle />
+          
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 bg-finance-teal/10">
+                  <UserRound className="h-5 w-5 text-finance-teal" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="flex items-center justify-start p-2 border-b">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">User Profile</p>
+                    <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </div>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="cursor-pointer">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/expenses" className="cursor-pointer">Expenses</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-red-500 focus:text-red-500 cursor-pointer" 
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
             <>
               <Button 
                 asChild 
                 variant="outline" 
-                className="hidden md:flex"
+                className="border-finance-teal text-finance-teal hover:bg-finance-teal/10"
               >
-                <Link to="/signin">Sign In</Link>
+                <Link to="/signin">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
+                </Link>
               </Button>
-              <Button 
-                asChild 
-                className="bg-finance-teal hover:bg-finance-teal/90 text-white shadow-md hover:shadow-lg transition-all"
-              >
-                <Link to="/onboarding">Get Started</Link>
-              </Button>
-            </>
-          ) : (
-            <>
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 bg-finance-teal/10">
-                      <UserRound className="h-5 w-5 text-finance-teal" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800">
-                    <div className="flex items-center justify-start p-2 border-b border-gray-200 dark:border-gray-700">
-                      <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium">User Profile</p>
-                        <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                      </div>
-                    </div>
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="cursor-pointer">Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/expenses" className="cursor-pointer">Expenses</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="text-red-500 focus:text-red-500 cursor-pointer" 
-                      onClick={handleSignOut}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
+              {isLanding && (
                 <Button 
                   asChild 
-                  variant="outline" 
-                  className="border-finance-teal text-finance-teal hover:bg-finance-teal/10"
+                  className="bg-finance-teal hover:bg-finance-teal/90 text-white shadow-md hover:shadow-lg transition-all"
                 >
-                  <Link to="/signin">
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Sign In
-                  </Link>
+                  <Link to="/signup">Get Started</Link>
                 </Button>
               )}
             </>
@@ -179,48 +177,60 @@ export const Navbar = () => {
             >
               Home
             </Link>
-            <Link 
-              to="/dashboard" 
-              className="text-lg font-medium hover:text-finance-teal transition-colors p-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Dashboard
-            </Link>
-            <Link 
-              to="/expenses" 
-              className="text-lg font-medium hover:text-finance-teal transition-colors p-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Expenses
-            </Link>
-            <Link 
-              to="/profile" 
-              className="text-lg font-medium hover:text-finance-teal transition-colors p-2"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Profile
-            </Link>
-            {!user && isLanding && (
-              <Link 
-                to="/signin" 
-                className="text-lg font-medium hover:text-finance-teal transition-colors p-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-            )}
-            {user && (
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  handleSignOut();
-                  setMobileMenuOpen(false);
-                }}
-                className="mt-2"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </Button>
+            {user ? (
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="text-lg font-medium hover:text-finance-teal transition-colors p-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  to="/expenses" 
+                  className="text-lg font-medium hover:text-finance-teal transition-colors p-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Expenses
+                </Link>
+                <Link 
+                  to="/profile" 
+                  className="text-lg font-medium hover:text-finance-teal transition-colors p-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    handleSignOut();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="mt-2"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/signin" 
+                  className="text-lg font-medium hover:text-finance-teal transition-colors p-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                {isLanding && (
+                  <Link 
+                    to="/signup" 
+                    className="text-lg font-medium text-finance-teal hover:text-finance-teal/80 transition-colors p-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Get Started
+                  </Link>
+                )}
+              </>
             )}
           </div>
         </div>

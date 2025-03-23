@@ -1,4 +1,5 @@
 
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,31 +19,48 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 // Create a client
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/signin" element={<Signin />} />
-            <Route path="/signup" element={<Signup />} />
-            
-            {/* Protected Routes */}
-            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Initialize theme from localStorage or system preference
+  useEffect(() => {
+    const theme = localStorage.getItem("theme") || "system";
+    const root = window.document.documentElement;
+    
+    if (theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(theme);
+    }
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/signin" element={<Signin />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              {/* Protected Routes */}
+              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
