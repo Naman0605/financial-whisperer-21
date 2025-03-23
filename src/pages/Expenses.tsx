@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NewExpenseForm from "@/components/expenses/NewExpenseForm";
@@ -7,10 +7,51 @@ import ExpenseEntry from "@/components/expenses/ExpenseEntry";
 import NewGoalForm from "@/components/goals/NewGoalForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const ExpensesPage = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("add-expense");
+  const [hasExpenses, setHasExpenses] = useState(false);
+  const [hasGoals, setHasGoals] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkUserData = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      
+      try {
+        // Check if user has any expenses
+        const { data: expenses, error: expensesError } = await supabase
+          .from('expenses')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+        
+        if (expensesError) throw expensesError;
+        
+        // Check if user has any goals
+        const { data: goals, error: goalsError } = await supabase
+          .from('goals')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+        
+        if (goalsError) throw goalsError;
+        
+        setHasExpenses(expenses && expenses.length > 0);
+        setHasGoals(goals && goals.length > 0);
+      } catch (error) {
+        console.error("Error checking user data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkUserData();
+  }, [user]);
 
   // Redirect to sign in page if not authenticated
   if (!user) {
@@ -37,11 +78,11 @@ const ExpensesPage = () => {
             </TabsList>
             
             <TabsContent value="add-expense" className="mt-0">
-              <NewExpenseForm />
+              <NewExpenseForm onSuccess={() => setHasExpenses(true)} />
             </TabsContent>
             
             <TabsContent value="add-goal" className="mt-0">
-              <NewGoalForm />
+              <NewGoalForm onSuccess={() => setHasGoals(true)} />
             </TabsContent>
             
             <TabsContent value="expense-entry" className="mt-0">

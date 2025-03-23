@@ -26,7 +26,11 @@ const item = {
   show: { opacity: 1, y: 0 }
 };
 
-export const NewGoalForm = () => {
+interface NewGoalFormProps {
+  onSuccess?: () => void;
+}
+
+export const NewGoalForm = ({ onSuccess }: NewGoalFormProps) => {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
@@ -67,6 +71,11 @@ export const NewGoalForm = () => {
         title: "Goal added",
         description: "Your savings goal has been successfully saved",
       });
+      
+      // Call the onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
       
       // Reset form
       setName("");

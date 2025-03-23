@@ -1,11 +1,12 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Trash, Repeat, CreditCard, Calendar, ArrowRight, ShoppingBag, Smartphone, Utensils, Loader2, RefreshCw } from "lucide-react";
+import { Lightbulb, Trash, Repeat, CreditCard, Calendar, ArrowRight, ShoppingBag, Smartphone, Utensils, Loader2, RefreshCw, PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import EmptyDataState from "@/components/expenses/EmptyDataState";
 
 interface Recommendation {
   title: string;
@@ -21,33 +22,6 @@ interface AIRecommendationData {
   error?: string;
 }
 
-const defaultRecommendations: Recommendation[] = [
-  {
-    title: "Cancel unused subscriptions",
-    description: "We found 2 subscriptions you haven't used in 3+ months",
-    savings: "₹650/month",
-    icon: "Trash"
-  },
-  {
-    title: "Switch utility provider",
-    description: "Based on your usage patterns, a different plan could be cheaper",
-    savings: "₹1,200/year",
-    icon: "Repeat"
-  },
-  {
-    title: "Consider a different credit card",
-    description: "Your spending would earn more rewards with this card",
-    savings: "₹3,500 more in rewards",
-    icon: "CreditCard"
-  },
-  {
-    title: "Set up automatic bill payments",
-    description: "You've paid ₹450 in late fees this year",
-    savings: "Avoid late fees in the future",
-    icon: "Calendar"
-  }
-];
-
 interface AIRecommendationsProps {
   onViewDetails?: () => void;
 }
@@ -55,13 +29,17 @@ interface AIRecommendationsProps {
 const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [recommendations, setRecommendations] = useState<Recommendation[]>(defaultRecommendations);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorState, setErrorState] = useState<string | null>(null);
+  const [hasData, setHasData] = useState(false);
   
   useEffect(() => {
     const loadRecommendations = async () => {
       setIsLoading(true);
+      
+      // First check if the user has any data in their profile
+      await checkUserData();
       
       // Attempt to load from localStorage first
       const storedRecommendations = localStorage.getItem('aiRecommendations');
@@ -81,7 +59,7 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
       }
       
       // If we have a user but no valid stored recommendations, generate new ones
-      if (user) {
+      if (user && hasData) {
         await generateRecommendations();
       } else {
         setIsLoading(false);
@@ -89,7 +67,39 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
     };
     
     loadRecommendations();
-  }, [user]);
+  }, [user, hasData]);
+  
+  const checkUserData = async () => {
+    if (!user) {
+      setHasData(false);
+      return;
+    }
+    
+    try {
+      // Check if user has any expenses or goals
+      const { data: expenses, error: expensesError } = await supabase
+        .from('expenses')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (expensesError) throw expensesError;
+      
+      const { data: goals, error: goalsError } = await supabase
+        .from('goals')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (goalsError) throw goalsError;
+      
+      // Set hasData to true if user has any expenses or goals
+      setHasData((expenses && expenses.length > 0) || (goals && goals.length > 0));
+    } catch (error) {
+      console.error("Error checking user data:", error);
+      setHasData(false);
+    }
+  };
   
   const generateRecommendations = async () => {
     setIsLoading(true);
@@ -119,6 +129,8 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
       if (!expenses?.length && !goals?.length) {
         setErrorState("You need to add expenses or savings goals to get personalized recommendations.");
         setIsLoading(false);
+        setRecommendations([]);
+        localStorage.removeItem('aiRecommendations');
         return;
       }
       
@@ -133,6 +145,7 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.ANON_KEY || ''}`,
         },
         body: JSON.stringify({ userData }),
       });
@@ -160,26 +173,19 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
       } else if (data.error) {
         throw new Error(data.error);
       } else {
-        throw new Error("Invalid response format from API");
+        setRecommendations([]);
+        localStorage.removeItem('aiRecommendations');
       }
     } catch (error) {
       console.error("Error generating recommendations:", error);
+      setRecommendations([]);
+      localStorage.removeItem('aiRecommendations');
       
-      // Only show toast if there's no recommendations (default or otherwise)
-      if (!recommendations || recommendations.length === 0) {
-        toast({
-          title: "Error",
-          description: "Failed to generate personalized recommendations. Using defaults instead.",
-          variant: "destructive"
-        });
-        setRecommendations(defaultRecommendations);
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to refresh recommendations. Using previous data.",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Error",
+        description: "Failed to generate personalized recommendations. Please try again later.",
+        variant: "destructive"
+      });
       
       setErrorState(error.message);
     } finally {
@@ -197,6 +203,10 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
       });
       navigate("/dashboard");
     }
+  };
+  
+  const handleAddData = () => {
+    navigate("/expenses");
   };
 
   const getIconComponent = (iconName: string) => {
@@ -219,6 +229,21 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
           <Loader2 className="h-8 w-8 text-finance-teal animate-spin" />
           <p>Generating recommendations...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show empty state if the user has no data
+  if (!hasData) {
+    return (
+      <div className="glass-card h-full">
+        <EmptyDataState
+          title="No financial data available"
+          description="Add your expenses and savings goals to get personalized AI recommendations."
+          actionLabel="Add Financial Data"
+          onAction={handleAddData}
+          icon={<Lightbulb className="h-8 w-8 text-finance-teal" />}
+        />
       </div>
     );
   }
@@ -247,7 +272,6 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
         {errorState && (
           <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-700 text-sm">
             <p>{errorState}</p>
-            <p className="mt-1">Using {recommendations === defaultRecommendations ? "default" : "previously generated"} recommendations.</p>
           </div>
         )}
         
@@ -281,14 +305,16 @@ const AIRecommendations = ({ onViewDetails }: AIRecommendationsProps) => {
           )}
         </div>
         
-        <Button 
-          variant="outline" 
-          className="w-full mt-4 text-finance-teal border-finance-teal/50 hover:bg-finance-teal/10"
-          onClick={handleViewDetails}
-        >
-          View Details
-          <ArrowRight className="h-4 w-4 ml-2" />
-        </Button>
+        {recommendations && recommendations.length > 0 && (
+          <Button 
+            variant="outline" 
+            className="w-full mt-4 text-finance-teal border-finance-teal/50 hover:bg-finance-teal/10"
+            onClick={handleViewDetails}
+          >
+            View Details
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        )}
       </div>
     </div>
   );

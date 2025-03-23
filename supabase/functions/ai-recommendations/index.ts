@@ -26,7 +26,7 @@ serve(async (req) => {
         error: "OpenAI API key is not configured",
         recommendations: []
       }), {
-        status: 500,
+        status: 200, // Return 200 instead of 500 to avoid breaking the client
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -118,30 +118,11 @@ serve(async (req) => {
       console.error("Failed to parse AI response as JSON:", parseError);
       console.log("Raw AI response:", aiResponse);
       
-      // Provide a fallback structured response
+      // Return empty recommendations instead of fallback data for new users
       parsedResponse = {
-        recommendations: [
-          { 
-            title: "Review Your Budget", 
-            description: "Based on your expenses, we recommend reviewing your monthly budget.",
-            savings: "Varies",
-            icon: "CreditCard"
-          },
-          {
-            title: "Track Your Spending",
-            description: "Start tracking all your expenses to identify areas where you can cut back.",
-            savings: "5-15% of monthly expenses",
-            icon: "Calendar"
-          },
-          {
-            title: "Set Up Automated Savings",
-            description: "Automate transfers to your savings account to make progress toward your goals.",
-            savings: "Consistent progress",
-            icon: "Repeat"
-          }
-        ],
-        analysis: "We couldn't analyze your spending patterns in detail. Please provide more information.",
-        savingsStrategy: "Start by setting aside a small amount each month toward your savings goals."
+        recommendations: [],
+        analysis: "We couldn't analyze your spending patterns yet. Please add more data to get personalized recommendations.",
+        savingsStrategy: "Start by entering your expenses and savings goals to receive tailored advice."
       };
     }
 
@@ -150,27 +131,14 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in ai-recommendations function:', error);
-    // Return a more structured error response with default recommendations
+    // Return empty recommendations instead of default recommendations for new users
     return new Response(JSON.stringify({ 
       error: error.message,
-      recommendations: [
-        { 
-          title: "Create a Budget", 
-          description: "Track your income and expenses to understand your spending patterns.",
-          savings: "Potential 10-15% savings",
-          icon: "CreditCard"
-        },
-        {
-          title: "Emergency Fund", 
-          description: "Start building an emergency fund for unexpected expenses.",
-          savings: "Financial security",
-          icon: "ShoppingBag"
-        }
-      ],
-      analysis: "We encountered an error while analyzing your financial data.",
-      savingsStrategy: "Focus on creating a budget and reducing unnecessary expenses."
+      recommendations: [],
+      analysis: "We need more information about your financial situation.",
+      savingsStrategy: "Start by adding your expenses and savings goals."
     }), {
-      status: 200, // Return 200 with fallback data instead of 500
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

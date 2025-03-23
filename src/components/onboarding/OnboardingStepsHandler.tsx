@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,46 +37,38 @@ export const useOnboardingSteps = () => {
     // When completing the final step, generate AI recommendations
     if (currentStep === totalSteps - 1) {
       try {
-        // Send user data to the AI recommendations function
-        const userData = {
-          expenses: expenses.filter(exp => exp.name && exp.amount),
-          goals: goals.filter(goal => goal.name && goal.target)
-        };
+        // Only send user data to the AI recommendations function if there's actual data
+        const filteredExpenses = expenses.filter(exp => exp.name && exp.amount);
+        const filteredGoals = goals.filter(goal => goal.name && goal.target);
         
-        toast({
-          title: "Generating recommendations",
-          description: "Our AI is analyzing your financial data...",
-        });
-        
-        try {
-          console.log("Sending request to AI recommendations:", userData);
+        if (filteredExpenses.length > 0 || filteredGoals.length > 0) {
+          const userData = {
+            expenses: filteredExpenses,
+            goals: filteredGoals
+          };
           
-          const response = await fetch('/api/ai-recommendations', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ userData }),
+          toast({
+            title: "Generating recommendations",
+            description: "Our AI is analyzing your financial data...",
           });
           
-          console.log("AI recommendations response status:", response.status);
-          
-          // Only proceed if we got a valid response
-          if (response && response.ok) {
-            const data = await response.json();
-            console.log("AI recommendations received:", data);
+          try {
+            console.log("Sending request to AI recommendations:", userData);
             
-            if (data.error) {
-              console.warn("API returned an error but with data:", data.error);
-              toast({
-                title: "Warning",
-                description: data.error,
-                variant: "destructive"
-              });
+            // Use Supabase's function invoke method instead of direct fetch
+            const { data, error } = await supabase.functions.invoke('ai-recommendations', {
+              body: { userData }
+            });
+            
+            if (error) {
+              console.error("Error calling AI recommendations:", error);
+              throw new Error(`API error: ${error.message}`);
             }
             
+            console.log("AI recommendations received:", data);
+            
             // Only store if we have valid recommendations
-            if (data.recommendations && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
+            if (data && data.recommendations && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
               localStorage.setItem('aiRecommendations', JSON.stringify(data));
               
               toast({
@@ -87,18 +78,16 @@ export const useOnboardingSteps = () => {
             } else {
               throw new Error("Invalid response format from API");
             }
-          } else {
-            const errorText = await response.text();
-            console.error("Error response from AI recommendations:", errorText);
-            throw new Error(`API responded with status: ${response.status} - ${errorText}`);
+          } catch (error) {
+            console.error("Error calling AI recommendations:", error);
+            toast({
+              title: "Couldn't generate recommendations",
+              description: "We'll try again when you visit your dashboard.",
+              variant: "destructive"
+            });
           }
-        } catch (error) {
-          console.error("Error calling AI recommendations:", error);
-          toast({
-            title: "Couldn't generate recommendations",
-            description: "We'll show you default recommendations instead.",
-            variant: "destructive"
-          });
+        } else {
+          console.log("No expense or goal data to send for AI recommendations");
         }
       } catch (error) {
         console.error("Error generating AI recommendations:", error);

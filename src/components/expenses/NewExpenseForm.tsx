@@ -53,7 +53,11 @@ const item = {
   show: { opacity: 1, y: 0 }
 };
 
-export const NewExpenseForm = () => {
+interface NewExpenseFormProps {
+  onSuccess?: () => void;
+}
+
+export const NewExpenseForm = ({ onSuccess }: NewExpenseFormProps) => {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -97,6 +101,11 @@ export const NewExpenseForm = () => {
         title: "Expense added",
         description: "Your expense has been successfully saved",
       });
+      
+      // Call the onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
       
       // Reset form
       setName("");
