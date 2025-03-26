@@ -2,8 +2,14 @@
 import { OnboardingLayout } from "@/components/onboarding/OnboardingLayout";
 import { useOnboardingSteps } from "@/components/onboarding/OnboardingStepsHandler";
 import { ExpensesStep, BankLinkStep, SavingsGoalsStep, AIAssistantStep, SuccessStep } from "@/components/onboarding/Steps";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Onboarding = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const { 
     currentStep, 
     totalSteps, 
@@ -20,6 +26,13 @@ const Onboarding = () => {
     addGoal,
     removeGoal
   } = useOnboardingSteps();
+
+  // Ensure the user is authenticated
+  useEffect(() => {
+    if (!user) {
+      navigate("/signin");
+    }
+  }, [user, navigate]);
 
   const StepComponent = () => {
     switch (currentStep) {
@@ -56,6 +69,10 @@ const Onboarding = () => {
         />;
     }
   };
+
+  if (!user) {
+    return null; // Don't render anything until we redirect to signin
+  }
 
   return (
     <OnboardingLayout

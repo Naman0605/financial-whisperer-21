@@ -61,7 +61,7 @@ export const MonthlySnapshot = () => {
         const { data: expenses, error: expensesError } = await supabase
           .from('expenses')
           .select('amount')
-          .eq('user_id', String(user.id));
+          .eq('user_id', user.id);
         
         if (expensesError) throw expensesError;
         
@@ -69,7 +69,7 @@ export const MonthlySnapshot = () => {
         const { data: goals, error: goalsError } = await supabase
           .from('goals')
           .select('target_amount, current_amount')
-          .eq('user_id', String(user.id));
+          .eq('user_id', user.id);
         
         if (goalsError) throw goalsError;
 
@@ -84,7 +84,7 @@ export const MonthlySnapshot = () => {
         
         // Calculate total expenses
         const totalExpenses = expenses ? expenses.reduce((sum, expense) => {
-          return sum + (parseFloat(expense.amount) || 0);
+          return sum + (parseFloat(String(expense.amount)) || 0);
         }, 0) : 0;
         
         // Estimate income (for demo, 160% of expenses)
@@ -97,7 +97,7 @@ export const MonthlySnapshot = () => {
         let mainSavingsGoal = 0;
         if (goals && goals.length > 0) {
           // Use the first goal as the main savings goal for simplicity
-          mainSavingsGoal = parseFloat(goals[0].target_amount) || 2000;
+          mainSavingsGoal = parseFloat(String(goals[0].target_amount)) || 2000;
           setSavingsGoal(mainSavingsGoal);
           
           // Calculate progress
