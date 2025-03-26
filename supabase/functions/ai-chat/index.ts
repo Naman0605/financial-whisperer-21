@@ -1,8 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') as string;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,10 +19,47 @@ serve(async (req) => {
   }
 
   try {
+    // Verify auth token from request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("Missing Authorization header");
+      return new Response(JSON.stringify({ 
+        error: "Missing authorization header",
+        response: "You need to be signed in to use this feature." 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Initialize Supabase client with the token
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
+
+    // Get user to verify authentication
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error("Authentication error:", userError);
+      return new Response(JSON.stringify({ 
+        error: "Authentication failed",
+        response: "Your session has expired. Please sign in again." 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { message, financialContext } = await req.json();
     
     console.log("Received message:", message);
     console.log("Financial context:", financialContext);
+    console.log("User ID:", user.id);
     
     if (!openAIApiKey) {
       console.error("Missing OpenAI API key");
@@ -40,6 +80,43 @@ serve(async (req) => {
       });
     }
     
+    // Fetch user's actual financial data if context is not provided
+    if (!financialContext || (!financialContext.expenses && !financialContext.goals)) {
+      try {
+        // Get user's expenses
+        const { data: expenses, error: expensesError } = await supabase
+          .from('expenses')
+          .select('name, amount, category')
+          .eq('user_id', user.id);
+        
+        if (expensesError) throw expensesError;
+        
+        // Get user's goals
+        const { data: goals, error: goalsError } = await supabase
+          .from('goals')
+          .select('name, target_amount, current_amount')
+          .eq('user_id', user.id);
+        
+        if (goalsError) throw goalsError;
+        
+        // Format data for OpenAI context
+        financialContext = {
+          expenses: expenses || [],
+          goals: goals ? goals.map(goal => ({
+            name: goal.name,
+            target: goal.target_amount,
+            current: goal.current_amount
+          })) : []
+        };
+        
+        console.log("Fetched financial context:", financialContext);
+      } catch (error) {
+        console.error("Error fetching financial data:", error);
+        // Continue with empty context if there's an error
+        financialContext = { expenses: [], goals: [] };
+      }
+    }
+    
     // Create a system prompt that includes the user's financial data
     let systemPrompt = "You are a helpful financial assistant that provides personalized advice.";
     
@@ -54,12 +131,14 @@ serve(async (req) => {
       
       if (financialContext.goals?.length > 0) {
         systemPrompt += "Savings Goals:\n";
-        systemPrompt += financialContext.goals.map(goal => `- ${goal.name}: ₹${goal.target}`).join('\n');
+        systemPrompt += financialContext.goals.map(goal => 
+          `- ${goal.name}: ₹${goal.target}${goal.current ? ` (Current: ₹${goal.current})` : ''}`
+        ).join('\n');
         systemPrompt += "\n\n";
       }
     }
     
-    systemPrompt += "Provide helpful, personalized financial advice based on this information. Keep responses concise and actionable.";
+    systemPrompt += "Provide helpful, personalized financial advice based on this information. Keep responses concise and actionable. Use Indian Rupees (₹) as the currency for all examples.";
 
     console.log("Sending message to OpenAI");
 
