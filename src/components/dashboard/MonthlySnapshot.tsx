@@ -110,7 +110,7 @@ export const MonthlySnapshot = () => {
         
         // Set data for chart
         setSnapshotData([
-          { name: "Income", value: estimatedIncome, color: "#4DB6AC" },
+          { name: "Inc", value: estimatedIncome, color: "#4DB6AC" },
           { name: "Expenses", value: totalExpenses, color: "#78909C" },
           { name: "Savings", value: savings, color: "#FFD54F" },
         ]);
